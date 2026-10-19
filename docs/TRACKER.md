@@ -7,6 +7,43 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 
 | ID | Documento | Tipo | Conteúdo (resumo) | Fonte | Localização |
 | --- | --- | --- | --- | --- | --- |
+| RFC-PROP-01 | `docs/RFC.md` | Proposta Técnica | Evento gravado na outbox na mesma transação do `changeStatus`; falha na gravação desfaz a mudança (ADR-001) | TRANSCRICAO | [09:08] Larissa |
+| RFC-PROP-02 | `docs/RFC.md` | Proposta Técnica | Filtro por status do pedido antes de gravar e payload em snapshot, sem itens (ADR-007) | TRANSCRICAO | [09:52] Bruno |
+| RFC-PROP-03 | `docs/RFC.md` | Proposta Técnica | Worker em processo separado lê pendentes a cada 2 s; worker único é premissa; ordem por pedido não garantida (RFC-QA-05, RFC-QA-06; ADR-002) | TRANSCRICAO | [09:10] Larissa |
+| RFC-PROP-04 | `docs/RFC.md` | Proposta Técnica | Envio com HMAC-SHA256 do corpo em `X-Signature`, secret por endpoint rotacionável com 24 h, forma da assinatura na convivência em aberto, e UUID em `X-Event-Id` (ADR-004, ADR-005) | TRANSCRICAO | [09:22] Sofia |
+| RFC-PROP-05 | `docs/RFC.md` | Proposta Técnica | Retry com backoff 1m/5m/30m/2h/12h, timeout HTTP de 10 s conta como falha, teto "5 tentativas" com contagem em aberto (ADR-003) | TRANSCRICAO | [09:17] Larissa |
+| RFC-PROP-06 | `docs/RFC.md` | Proposta Técnica | Esgotados os envios, evento vai para `webhook_dead_letter`; reprocessamento por ADMIN com registro de quem fez (ADR-003) | TRANSCRICAO | [09:18] Diego |
+| RFC-PROP-07 | `docs/RFC.md` | Proposta Técnica | Entrega at-least-once com deduplicação pelo cliente via `X-Event-Id`; no reprocessamento, depende da RFC-QA-11 (ADR-005) | TRANSCRICAO | [09:26] Larissa |
+| RFC-PROP-08 | `docs/RFC.md` | Proposta Técnica | Módulo `src/modules/webhooks/` (novo) no padrão dos módulos, reuso dos padrões transversais e prefixo `WEBHOOK_` (ADR-006) | TRANSCRICAO | [09:30] Larissa |
+| RFC-PROP-09 | `docs/RFC.md` | Proposta Técnica | Capacidades da API de configuração e consulta: cadastro com secret gerada e URL https, listar, editar, remover, status de interesse, últimos 100 envios, rotação, reprocessamento ADMIN; demais operações para qualquer autenticado | TRANSCRICAO | [09:31] Marcos |
+| RFC-PROP-10 | `docs/RFC.md` | Proposta Técnica | Fora desta proposta: webhooks de entrada, aviso por e-mail, painel visual, arquivamento sem prazo, múltiplos workers | TRANSCRICAO | [09:40] Larissa |
+| RFC-ALT-01 | `docs/RFC.md` | Alternativa Descartada | Disparo síncrono no `changeStatus` | TRANSCRICAO | [09:04] Bruno |
+| RFC-ALT-02 | `docs/RFC.md` | Alternativa Descartada | Redis Streams | TRANSCRICAO | [09:07] Diego |
+| RFC-ALT-03 | `docs/RFC.md` | Alternativa Descartada | Trigger do MySQL para acordar o worker | TRANSCRICAO | [09:09] Diego |
+| RFC-ALT-04 | `docs/RFC.md` | Alternativa Descartada | Worker no mesmo processo da API | TRANSCRICAO | [09:11] Diego |
+| RFC-ALT-05 | `docs/RFC.md` | Alternativa Descartada | Exactly-once, descartado por exigir coordenação dos dois lados | TRANSCRICAO | [09:25] Diego |
+| RFC-QA-01 | `docs/RFC.md` | Questão em Aberto | `customer_id` do cadastro no body ou no path (não decidido) | TRANSCRICAO | [09:32] Larissa |
+| RFC-QA-02 | `docs/RFC.md` | Questão em Aberto | Rate limiting de envios por cliente ("observar e decidir depois", gatilho "se virar problema") | TRANSCRICAO | [09:39] Larissa |
+| RFC-QA-03 | `docs/RFC.md` | Questão em Aberto | Escala para vários workers: particionar por pedido ou lock pessimista (adiado) | TRANSCRICAO | [09:13] Diego |
+| RFC-QA-04 | `docs/RFC.md` | Questão em Aberto | Endurecer as permissões do CRUD de configuração (adiado) | TRANSCRICAO | [09:37] Sofia |
+| RFC-QA-05 | `docs/RFC.md` | Questão em Aberto | Lacuna: ordem por pedido durante o retry, reordenar ou segurar (ADR-002, questão 1) | TRANSCRICAO | [09:12] Diego |
+| RFC-QA-06 | `docs/RFC.md` | Questão em Aberto | Lacuna: envio das linhas do ciclo uma de cada vez ou ao mesmo tempo (ADR-002, questão 2) | TRANSCRICAO | [09:42] Diego |
+| RFC-QA-07 | `docs/RFC.md` | Questão em Aberto | Lacuna: meta de 10 s vale só para o primeiro envio (ADR-002, questão 3) | TRANSCRICAO | [09:02] Marcos |
+| RFC-QA-08 | `docs/RFC.md` | Questão em Aberto | Lacuna: "5 tentativas" com ou sem o envio inicial (ADR-003, questão 1) | TRANSCRICAO | [09:17] Larissa |
+| RFC-QA-09 | `docs/RFC.md` | Questão em Aberto | Lacuna: forma da assinatura nas 24 h de convivência das secrets (ADR-004, questão 1) | TRANSCRICAO | [09:21] Sofia |
+| RFC-QA-10 | `docs/RFC.md` | Questão em Aberto | Lacuna: `X-Timestamp` dentro ou fora do que é assinado (ADR-004, questão 2) | TRANSCRICAO | [09:44] Diego |
+| RFC-QA-11 | `docs/RFC.md` | Questão em Aberto | Lacuna: reprocessamento mantém ou não o identificador do evento (ADR-005, questão 1) | TRANSCRICAO | [09:18] Diego |
+| RFC-QA-12 | `docs/RFC.md` | Questão em Aberto | Lacuna: prefixo `WEBHOOK_` nos erros que saem de caminhos com código fixo (ADR-006, questão 1) | TRANSCRICAO | [09:29] Larissa |
+| RFC-RISCO-01 | `docs/RFC.md` | Risco | Estimativa por bloco já fecha 3 sprints antes do "mais um pouco" e da revisão de segurança | TRANSCRICAO | [09:46] Larissa |
+| RFC-RISCO-02 | `docs/RFC.md` | Risco | Reprocessamento por ADMIN fraco: registro público aceita ADMIN (ADR-003-CONS-08) | CODIGO | src/modules/auth/auth.routes.ts |
+| RFC-RISCO-03 | `docs/RFC.md` | Risco | Outbox e DLQ sem política de retenção (ADR-001-CONS-06, ADR-003-CONS-15) | TRANSCRICAO | [09:08] Diego |
+| RFC-RISCO-04 | `docs/RFC.md` | Risco | Worker único sem garantia e worker parado sem detecção (ADR-002-CONS-10, ADR-002-CONS-13) | TRANSCRICAO | [09:12] Diego |
+| RFC-RISCO-05 | `docs/RFC.md` | Risco | Meta de 10 s só atendida no caminho feliz; primeiro envio que falha espera pelo menos 1 min (ADR-002-CONS-12) | TRANSCRICAO | [09:17] Larissa |
+| RFC-RISCO-06 | `docs/RFC.md` | Risco | Limite de 64 KB checado na inserção com erro desfaz a mudança de status (ADR-007-CONS-09) | TRANSCRICAO | [09:24] Larissa |
+| RFC-IMP-01 | `docs/RFC.md` | Impacto | `changeStatus` ganha escrita na outbox, leitura da configuração e nova causa de rollback (ADR-001-CONS-04, ADR-007-CONS-05) | TRANSCRICAO | [09:40] Bruno |
+| RFC-IMP-02 | `docs/RFC.md` | Impacto | Segundo processo para implantar, supervisionar e monitorar; carga contínua no MySQL (ADR-002-CONS-08, ADR-002-CONS-15) | TRANSCRICAO | [09:11] Larissa |
+| RFC-IMP-03 | `docs/RFC.md` | Impacto | Cliente verifica assinatura, deduplica e lida com eventos fora de ordem; documentação no portal | TRANSCRICAO | [09:26] Marcos |
+| RFC-IMP-04 | `docs/RFC.md` | Impacto | Prazo de 3 sprints com revisão de segurança de pelo menos 2 dias úteis no fim; Atlas pede fim de novembro; Marcos confirma o prazo | TRANSCRICAO | [09:47] Larissa |
 | ADR-001 | `docs/adrs/ADR-001-outbox-transacional-no-mysql.md` | Decisão | Outbox no MySQL gravada na mesma transação do `changeStatus`; falha na gravação desfaz a mudança de status | TRANSCRICAO | [09:08] Larissa |
 | ADR-001-ALT-01 | `docs/adrs/ADR-001-outbox-transacional-no-mysql.md` | Alternativa Descartada | Disparo síncrono da chamada HTTP no `changeStatus` | TRANSCRICAO | [09:04] Bruno |
 | ADR-001-ALT-02 | `docs/adrs/ADR-001-outbox-transacional-no-mysql.md` | Alternativa Descartada | Redis Streams como fila | TRANSCRICAO | [09:07] Diego |
