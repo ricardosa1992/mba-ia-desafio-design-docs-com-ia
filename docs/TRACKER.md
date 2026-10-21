@@ -151,3 +151,46 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | ADR-007-CONS-09 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Consequência | Consequência derivada: limite de 64 KB checado na inserção desfaria a mudança de status | TRANSCRICAO | [09:24] Larissa |
 | ADR-007-CONS-10 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Consequência | Consequência derivada: efeito do estado ativo no filtro e destino das linhas de webhook desativado ou removido não definidos | TRANSCRICAO | [09:21] Sofia |
 | ADR-007-CONS-11 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Consequência | Consequência derivada: filtro pede índice pelo cliente; snapshot ocupa outbox e DLQ | TRANSCRICAO | [09:34] Bruno |
+| FDD-OBJ-01 | `docs/FDD.md` | Objetivo Técnico | Linha da outbox existe se e somente se a mudança de status pelo `changeStatus` com webhook interessado foi confirmada, para payload de até 64 KB (ADR-001) | TRANSCRICAO | [09:06] Diego |
+| FDD-OBJ-02 | `docs/FDD.md` | Objetivo Técnico | Primeiro envio até 2 s depois da gravação no caminho feliz, para a meta de notificação abaixo de 10 s (alcance em RFC-QA-07) | TRANSCRICAO | [09:10] Larissa |
+| FDD-OBJ-03 | `docs/FDD.md` | Objetivo Técnico | Reentrega com backoff 1m/5m/30m/2h/12h até o teto de 5 tentativas (contagem em aberto), timeout HTTP de 10 s como falha e DLQ ao esgotar (ADR-003) | TRANSCRICAO | [09:17] Larissa |
+| FDD-OBJ-04 | `docs/FDD.md` | Objetivo Técnico | Todo envio com HMAC-SHA256 do corpo no `X-Signature`, secret por endpoint (ADR-004) | TRANSCRICAO | [09:22] Sofia |
+| FDD-OBJ-05 | `docs/FDD.md` | Objetivo Técnico | Mesmo identificador em `X-Event-Id` e `event_id` em todos os envios da linha (ADR-005) | TRANSCRICAO | [09:25] Diego |
+| FDD-OBJ-06 | `docs/FDD.md` | Restrição | Só MySQL e stack existentes; reuso de módulo, erros, Zod, autenticação e Pino (ADR-006) | TRANSCRICAO | [09:30] Larissa |
+| FDD-ESC-01 | `docs/FDD.md` | Escopo | Gravação do evento na outbox dentro do `changeStatus` por `publishWebhookEvent` | TRANSCRICAO | [09:40] Bruno |
+| FDD-ESC-02 | `docs/FDD.md` | Escopo | Worker em processo próprio, `src/worker.ts` (novo) e `npm run worker` | TRANSCRICAO | [09:11] Larissa |
+| FDD-ESC-03 | `docs/FDD.md` | Escopo | Retry com backoff, DLQ separada e reprocessamento por ADMIN com registro | TRANSCRICAO | [09:17] Larissa |
+| FDD-ESC-04 | `docs/FDD.md` | Escopo | Assinatura HMAC-SHA256, secret por endpoint gerada pela plataforma, rotação com 24 h | TRANSCRICAO | [09:22] Sofia |
+| FDD-ESC-05 | `docs/FDD.md` | Escopo | API de configuração (cadastrar, listar, editar, remover) e histórico de entregas | TRANSCRICAO | [09:33] Bruno |
+| FDD-ESC-06 | `docs/FDD.md` | Escopo | Módulo `src/modules/webhooks/` (novo) na estrutura dos módulos existentes | TRANSCRICAO | [09:27] Bruno |
+| FDD-ESC-07 | `docs/FDD.md` | Escopo | Excluído: webhooks de entrada | TRANSCRICAO | [09:02] Marcos |
+| FDD-ESC-08 | `docs/FDD.md` | Escopo | Excluído: aviso por e-mail de falhas, fase futura, não é caminho de entrega | TRANSCRICAO | [09:37] Larissa |
+| FDD-ESC-09 | `docs/FDD.md` | Escopo | Excluído: painel visual, projeto do time de frontend | TRANSCRICAO | [09:40] Larissa |
+| FDD-ESC-10 | `docs/FDD.md` | Escopo | Excluído: rate limiting de envios, em observação (RFC-QA-02) | TRANSCRICAO | [09:39] Larissa |
+| FDD-ESC-11 | `docs/FDD.md` | Escopo | Excluído: arquivamento das linhas entregues, sem prazo | TRANSCRICAO | [09:08] Diego |
+| FDD-ESC-12 | `docs/FDD.md` | Escopo | Excluído: vários workers ao mesmo tempo (RFC-QA-03) | TRANSCRICAO | [09:13] Diego |
+| FDD-ESC-13 | `docs/FDD.md` | Escopo | Excluído: permissões mais restritas no CRUD (RFC-QA-04) | TRANSCRICAO | [09:37] Sofia |
+| FDD-ESC-14 | `docs/FDD.md` | Escopo | Proposta: criação do pedido não gera evento nesta fase (questão 1 do ADR-001) | TRANSCRICAO | [09:40] Bruno |
+| FDD-ESC-15 | `docs/FDD.md` | Escopo | Proposta: mudanças de status fora do `changeStatus` (seed, SQL) não geram evento e a regra é documentada (questão 2 do ADR-001) | TRANSCRICAO | [09:40] Bruno |
+| FDD-DADOS-01 | `docs/FDD.md` | Modelo de Dados | Tabela `webhook_endpoints` com url, secret, cliente, estado ativo, dados de rotação, lista de status em `Json` e remoção lógica | TRANSCRICAO | [09:21] Bruno |
+| FDD-DADOS-02 | `docs/FDD.md` | Modelo de Dados | Tabela `webhook_outbox` com UUID, `eventId`, snapshot, estado, índices em status e criação; proposta de uma linha por webhook, envios, próximo envio e entrada em processando | TRANSCRICAO | [09:08] Diego |
+| FDD-DADOS-03 | `docs/FDD.md` | Modelo de Dados | Proposta: tabela `webhook_deliveries`, uma linha por envio, com payload, status HTTP, corpo truncado, tempo e resultado | TRANSCRICAO | [09:34] Marcos |
+| FDD-DADOS-04 | `docs/FDD.md` | Modelo de Dados | Tabela `webhook_dead_letter` com payload, motivo e timestamp; proposta de `eventId`, envios e dados do reprocessamento | TRANSCRICAO | [09:18] Diego |
+| FDD-DADOS-05 | `docs/FDD.md` | Modelo de Dados | Proposta: enum `WebhookOutboxStatus` com pendente, processando, falhou (aguarda próximo envio) e entregue, e transições | TRANSCRICAO | [09:08] Diego |
+| FDD-DADOS-06 | `docs/FDD.md` | Modelo de Dados | Proposta: sketch Prisma dos quatro modelos e do enum, no padrão do schema atual, em migração nova | CODIGO | prisma/schema.prisma |
+| FDD-FLUXO-01 | `docs/FDD.md` | Fluxo | Criação do evento no `changeStatus`: filtro por status, snapshot, `eventId` por `uuid`, uma linha por webhook, rollback em erro | TRANSCRICAO | [09:40] Bruno |
+| FDD-FLUXO-02 | `docs/FDD.md` | Fluxo | Proposta: payload acima de 64 KB vai direto para a DLQ sem lançar erro (questão 2 do ADR-007) | TRANSCRICAO | [09:24] Larissa |
+| FDD-FLUXO-03 | `docs/FDD.md` | Fluxo | Ciclo do worker: entry-point, `PrismaClient` próprio, linhas presas, lote com `FOR UPDATE SKIP LOCKED` via `$queryRaw`, envio sequencial com `fetch` e timeout de 10 s, desligamento | TRANSCRICAO | [09:10] Larissa |
+| FDD-FLUXO-04 | `docs/FDD.md` | Fluxo | Retry: tabela dos envios, proposta de 6 envios (876 min) e alternativa de 5 (156 min), cálculo do próximo envio, o que conta como falha | TRANSCRICAO | [09:17] Larissa |
+| FDD-FLUXO-05 | `docs/FDD.md` | Fluxo | Proposta: envios esgotados copiam a linha para a DLQ e a removem da outbox na mesma transação, com o motivo | TRANSCRICAO | [09:18] Diego |
+| FDD-FLUXO-06 | `docs/FDD.md` | Fluxo | Reprocessamento por ADMIN em `POST /api/v1/admin/webhooks/dead-letter/:id/replay`, com log de auditoria; proposta de mesmo `eventId` e recusa de segundo reprocessamento | TRANSCRICAO | [09:35] Diego |
+| FDD-FLUXO-07 | `docs/FDD.md` | Fluxo | Rotação: secret nova por `crypto.randomBytes`, anterior válida por 24 h, proposta de dois valores no `X-Signature` | TRANSCRICAO | [09:21] Sofia |
+| FDD-CONTRATO-01 | `docs/FDD.md` | Contrato | `POST /api/v1/webhooks`: cadastro com URL https, status e `customerId`; devolve a secret | TRANSCRICAO | [09:31] Marcos |
+| FDD-CONTRATO-02 | `docs/FDD.md` | Contrato | `GET /api/v1/webhooks?customerId=`: listagem paginada por cliente, sem secret | TRANSCRICAO | [09:33] Bruno |
+| FDD-CONTRATO-03 | `docs/FDD.md` | Contrato | `PATCH /api/v1/webhooks/:id`: edição parcial de URL, status e estado ativo | TRANSCRICAO | [09:33] Bruno |
+| FDD-CONTRATO-04 | `docs/FDD.md` | Contrato | `DELETE /api/v1/webhooks/:id`: proposta de remoção lógica, `204` | TRANSCRICAO | [09:33] Bruno |
+| FDD-CONTRATO-05 | `docs/FDD.md` | Contrato | Proposta: `POST /api/v1/webhooks/:id/secret/rotate` devolve a secret nova e a expiração da anterior | TRANSCRICAO | [09:21] Sofia |
+| FDD-CONTRATO-06 | `docs/FDD.md` | Contrato | `GET /api/v1/webhooks/:id/deliveries`: últimos 100 envios, sem paginação (proposta) | TRANSCRICAO | [09:34] Marcos |
+| FDD-CONTRATO-07 | `docs/FDD.md` | Contrato | `POST /api/v1/admin/webhooks/dead-letter/:id/replay` com `requireRole('ADMIN')` | TRANSCRICAO | [09:36] Larissa |
+| FDD-CONTRATO-08 | `docs/FDD.md` | Contrato | Request de entrega: headers `Content-Type`, `X-Event-Id`, `X-Signature`, `X-Timestamp`, `X-Webhook-Id`, payload e verificação no cliente | TRANSCRICAO | [09:44] Diego |
+| FDD-CONTRATO-09 | `docs/FDD.md` | Contrato | `publishWebhookEvent(tx, order, fromStatus, toStatus)` com `Prisma.TransactionClient`, chamada no `changeStatus` | TRANSCRICAO | [09:41] Bruno |
