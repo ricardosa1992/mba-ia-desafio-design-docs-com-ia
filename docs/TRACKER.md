@@ -194,3 +194,123 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-CONTRATO-07 | `docs/FDD.md` | Contrato | `POST /api/v1/admin/webhooks/dead-letter/:id/replay` com `requireRole('ADMIN')` | TRANSCRICAO | [09:36] Larissa |
 | FDD-CONTRATO-08 | `docs/FDD.md` | Contrato | Request de entrega: headers `Content-Type`, `X-Event-Id`, `X-Signature`, `X-Timestamp`, `X-Webhook-Id`, payload e verificação no cliente | TRANSCRICAO | [09:44] Diego |
 | FDD-CONTRATO-09 | `docs/FDD.md` | Contrato | `publishWebhookEvent(tx, order, fromStatus, toStatus)` com `Prisma.TransactionClient`, chamada no `changeStatus` | TRANSCRICAO | [09:41] Bruno |
+| FDD-ERRO-01 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_VALIDATION_ERROR` (400, `BadRequestError` pelo `validate` com código padrão) para erros de schema fora de `url` e `statuses` (RFC-QA-12) | TRANSCRICAO | [09:29] Larissa |
+| FDD-ERRO-02 | `docs/FDD.md` | Erro | `WEBHOOK_INVALID_URL` (400, `BadRequestError` pelo `validate` com código do campo `url`) para URL inválida ou sem https | TRANSCRICAO | [09:28] Bruno |
+| FDD-ERRO-03 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_INVALID_EVENT_FILTER` (400) para `statuses` vazio, repetido ou fora de `OrderStatus` | TRANSCRICAO | [09:33] Marcos |
+| FDD-ERRO-04 | `docs/FDD.md` | Erro | `WEBHOOK_NOT_FOUND` (404, subclasse de `AppError` em `webhook.errors.ts` (novo)) para webhook inexistente ou removido | TRANSCRICAO | [09:28] Bruno |
+| FDD-ERRO-05 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_CUSTOMER_NOT_FOUND` (404) para `customerId` sem cliente no cadastro | TRANSCRICAO | [09:32] Larissa |
+| FDD-ERRO-06 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_DEAD_LETTER_NOT_FOUND` (404) para entrada da DLQ inexistente no reprocessamento | TRANSCRICAO | [09:18] Diego |
+| FDD-ERRO-07 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_DEAD_LETTER_ALREADY_REPLAYED` (409, `ConflictError`) para entrada já reprocessada (RFC-QA-11) | TRANSCRICAO | [09:18] Diego |
+| FDD-ERRO-08 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_PAYLOAD_TOO_LARGE` (422, `UnprocessableEntityError`) no reprocessamento de entrada gravada por payload acima de 64 KB | TRANSCRICAO | [09:24] Larissa |
+| FDD-ERRO-09 | `docs/FDD.md` | Erro | Proposta: motivo gravado `WEBHOOK_DELIVERY_TIMEOUT` para envio sem resposta em 10 s, no formato `CÓDIGO: detalhe` | TRANSCRICAO | [09:42] Diego |
+| FDD-ERRO-10 | `docs/FDD.md` | Erro | Proposta: motivo gravado `WEBHOOK_DELIVERY_HTTP_ERROR` para resposta fora de 2xx | TRANSCRICAO | [09:42] Diego |
+| FDD-ERRO-11 | `docs/FDD.md` | Erro | Proposta: motivo gravado `WEBHOOK_DELIVERY_NETWORK_ERROR` para DNS, conexão recusada ou TLS | TRANSCRICAO | [09:42] Diego |
+| FDD-ERRO-12 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_SECRET_REQUIRED` como motivo gravado pelo worker sem secret utilizável; nunca resposta da API; alternativa de descartar (questão 2 do ADR-006) | TRANSCRICAO | [09:28] Bruno |
+| FDD-ERRO-13 | `docs/FDD.md` | Erro | Proposta: motivo `WEBHOOK_PAYLOAD_TOO_LARGE` gravado por `publishWebhookEvent` na DLQ, com `attempts` zero | TRANSCRICAO | [09:24] Larissa |
+| FDD-RES-01 | `docs/FDD.md` | Resiliência | Timeout HTTP de 10 s com `AbortSignal.timeout`, contado como falha; distinto da meta de 10 s | TRANSCRICAO | [09:42] Diego |
+| FDD-RES-02 | `docs/FDD.md` | Resiliência | Retry com backoff 1m/5m/30m/2h/12h; proposta de 6 envios (RFC-QA-08) e falha = fora de 2xx, rede ou timeout | TRANSCRICAO | [09:17] Larissa |
+| FDD-RES-03 | `docs/FDD.md` | Resiliência | DLQ ao esgotar os envios; proposta de cópia e remoção na mesma transação e falhou = aguarda próximo envio | TRANSCRICAO | [09:18] Diego |
+| FDD-RES-04 | `docs/FDD.md` | Resiliência | Reprocessamento por ADMIN devolve à outbox como pendente; proposta de mesmo `eventId`, snapshot como está e recusa do segundo | TRANSCRICAO | [09:18] Diego |
+| FDD-RES-05 | `docs/FDD.md` | Resiliência | Proposta: linha em processando há mais de 5 min volta a pendente sem contar envio (questão 7 do ADR-002) | CODIGO | src/server.ts |
+| FDD-RES-06 | `docs/FDD.md` | Resiliência | Proposta: desligamento espera o ciclo em andamento e desconecta (questão 8 do ADR-002) | CODIGO | src/server.ts |
+| FDD-RES-07 | `docs/FDD.md` | Resiliência | Proposta: erro no ciclo loga `webhook_cycle_failed` e não encerra; falha de conexão no início encerra com `bootstrap_failed` | CODIGO | src/server.ts |
+| FDD-RES-08 | `docs/FDD.md` | Resiliência | Invariante (a): linha gravada se e somente se a mudança pelo `changeStatus` foi confirmada com webhook interessado, com as exceções de 64 KB, fora do `changeStatus` e reprocessamento | TRANSCRICAO | [09:40] Bruno |
+| FDD-RES-09 | `docs/FDD.md` | Resiliência | Invariante (b): nenhuma linha sai da outbox sem entrega ou cópia para a DLQ na mesma transação; entregues ficam (sem arquivamento) | TRANSCRICAO | [09:18] Diego |
+| FDD-RES-10 | `docs/FDD.md` | Resiliência | Invariante (c): todos os envios de uma linha com o mesmo `eventId` e o mesmo corpo | TRANSCRICAO | [09:25] Diego |
+| FDD-RES-11 | `docs/FDD.md` | Resiliência | Fallback atual = DLQ e reprocessamento manual; e-mail é fase futura e não é fallback | TRANSCRICAO | [09:37] Larissa |
+| FDD-RES-12 | `docs/FDD.md` | Resiliência | Proposta: envio de uma linha de cada vez faz endpoint lento segurar o ciclo até 10 s por linha (RFC-QA-06) | TRANSCRICAO | [09:42] Diego |
+| FDD-OBS-01 | `docs/FDD.md` | Observabilidade | Proposta: eventos de log `webhook_*` em snake_case com campos em camelCase, quem loga e nível | CODIGO | src/server.ts |
+| FDD-OBS-02 | `docs/FDD.md` | Observabilidade | Proposta: logs do worker por `logger.child({ component: 'webhook-worker' })`, sem alterar `base.service` | CODIGO | src/shared/logger/index.ts |
+| FDD-OBS-03 | `docs/FDD.md` | Observabilidade | Proposta: `secret`, `previousSecret` e os mesmos caminhos com `*.` no `redactPaths`; nenhum log do cadastro completo nem dos headers (questão 3 do ADR-004) | TRANSCRICAO | [09:22] Diego |
+| FDD-OBS-04 | `docs/FDD.md` | Observabilidade | Auditoria do reprocessamento com o usuário pelo log `webhook_dead_letter_replayed` | TRANSCRICAO | [09:36] Sofia |
+| FDD-OBS-05 | `docs/FDD.md` | Observabilidade | Proposta: `publishWebhookEvent` não loga dentro da transação; entrada de 64 KB percebida pela consulta da DLQ | TRANSCRICAO | [09:40] Bruno |
+| FDD-OBS-06 | `docs/FDD.md` | Observabilidade | Proposta: métricas por consultas SQL às tabelas novas e contagens do log do ciclo, sem biblioteca de métricas | TRANSCRICAO | [09:34] Marcos |
+| FDD-OBS-07 | `docs/FDD.md` | Observabilidade | Proposta: biblioteca de métricas fora desta fase, proposta futura | TRANSCRICAO | [09:30] Larissa |
+| FDD-OBS-08 | `docs/FDD.md` | Observabilidade | Correlação pelo `eventId` (tabelas, logs, `X-Event-Id`) e pelo `orderId` com o log `http_request` | TRANSCRICAO | [09:25] Diego |
+| FDD-OBS-09 | `docs/FDD.md` | Observabilidade | Proposta: `requestId` não gravado na outbox para não mudar a assinatura de `publishWebhookEvent` | TRANSCRICAO | [09:41] Bruno |
+| FDD-OBS-10 | `docs/FDD.md` | Observabilidade | Proposta: tracing distribuído (OpenTelemetry) fora desta fase | CODIGO | package.json |
+| FDD-OBS-11 | `docs/FDD.md` | Observabilidade | Proposta: worker parado detectado pelo log `webhook_cycle_completed` e idade da linha elegível com limiar de 1 min (questão 6 do ADR-002) | TRANSCRICAO | [09:10] Larissa |
+| FDD-OBS-12 | `docs/FDD.md` | Observabilidade | Proposta: DLQ acompanhada pelo log `webhook_dead_lettered` e pela consulta das entradas sem reprocessamento (questão 4 do ADR-003) | TRANSCRICAO | [09:18] Diego |
+| FDD-DEP-01 | `docs/FDD.md` | Dependência | Node >=20: `fetch`, `AbortSignal.timeout` e `crypto` (`createHmac`, `randomBytes`, `timingSafeEqual`), verificados na documentação da v20 | TRANSCRICAO | [09:20] Sofia |
+| FDD-DEP-02 | `docs/FDD.md` | Dependência | MySQL 8.0 do `docker-compose.yml`, com `SKIP LOCKED` e colunas `Json` | TRANSCRICAO | [09:07] Diego |
+| FDD-DEP-03 | `docs/FDD.md` | Dependência | Prisma 5.22.0: `$queryRaw` na transação, migração nova, `PrismaClient` próprio no worker com a mesma `DATABASE_URL` | TRANSCRICAO | [09:30] Bruno |
+| FDD-DEP-04 | `docs/FDD.md` | Dependência | `uuid` 11.0.3, `zod` 3.23.8 e `pino` 9.5.0 já declarados | TRANSCRICAO | [09:25] Diego |
+| FDD-DEP-05 | `docs/FDD.md` | Dependência | Nenhuma dependência nova | TRANSCRICAO | [09:30] Larissa |
+| FDD-DEP-06 | `docs/FDD.md` | Dependência | Worker importa `src/config/env.ts` e exige as mesmas variáveis da API, inclusive `JWT_SECRET` | CODIGO | src/config/env.ts |
+| FDD-DEP-07 | `docs/FDD.md` | Dependência | Segundo pool de conexões: tamanho padrão do pool do Prisma 5.22.0 e `max_connections` padrão do MySQL 8.0 verificados; hipótese de soma abaixo do limite em produção | CODIGO | .env.example |
+| FDD-DEP-08 | `docs/FDD.md` | Dependência | Proposta: sem mudança nesta fase; exclusão de cliente com webhook falha por `Restrict` com `P2003` e responde 500 | CODIGO | src/modules/customers/customer.service.ts |
+| FDD-DEP-09 | `docs/FDD.md` | Dependência | Proposta: parâmetros como constantes em `webhook.config.ts` (novo), sem variável de ambiente nova | CODIGO | src/config/env.ts |
+| FDD-DEP-10 | `docs/FDD.md` | Dependência | Compatibilidade: nenhuma rota existente muda; `PATCH /api/v1/orders/:id/status` ganha leitura e gravação na transação | TRANSCRICAO | [09:40] Bruno |
+| FDD-INT-01 | `docs/FDD.md` | Integração | `order.service.ts`: `changeStatus` chama `publishWebhookEvent` depois do histórico e antes da releitura | TRANSCRICAO | [09:40] Bruno |
+| FDD-INT-01b | `docs/FDD.md` | Integração | `order.service.ts`: ponto de chamada dentro do callback de `$transaction` | CODIGO | src/modules/orders/order.service.ts |
+| FDD-INT-02 | `docs/FDD.md` | Integração | `order.status.ts` sem alteração; define os `to_status` que geram evento | CODIGO | src/modules/orders/order.status.ts |
+| FDD-INT-03 | `docs/FDD.md` | Integração | `app-error.ts` sem alteração; base das subclasses do módulo | TRANSCRICAO | [09:28] Bruno |
+| FDD-INT-04 | `docs/FDD.md` | Integração | `http-errors.ts` sem alteração; classes que aceitam código reaproveitadas e subclasses próprias para 404 | CODIGO | src/shared/errors/http-errors.ts |
+| FDD-INT-05 | `docs/FDD.md` | Integração | Proposta: `validate.middleware.ts` ganha parâmetro opcional com código padrão e por campo | TRANSCRICAO | [09:29] Larissa |
+| FDD-INT-06 | `docs/FDD.md` | Integração | `auth.middleware.ts` sem alteração; `authenticate` no módulo e `requireRole('ADMIN')` no reprocessamento | TRANSCRICAO | [09:36] Larissa |
+| FDD-INT-06b | `docs/FDD.md` | Integração | `auth.middleware.ts`: `requireRole` existente reaproveitado | CODIGO | src/middlewares/auth.middleware.ts |
+| FDD-INT-07 | `docs/FDD.md` | Integração | `error.middleware.ts` sem alteração; não atua no worker | TRANSCRICAO | [09:29] Bruno |
+| FDD-INT-08 | `docs/FDD.md` | Integração | `request-logger.middleware.ts` sem alteração; correlação pelo `http_request` | CODIGO | src/middlewares/request-logger.middleware.ts |
+| FDD-INT-09 | `docs/FDD.md` | Integração | Proposta: `logger/index.ts` com os caminhos de `secret` e `previousSecret` no `redactPaths`; worker por `logger.child` | TRANSCRICAO | [09:22] Diego |
+| FDD-INT-10 | `docs/FDD.md` | Integração | `server.ts` sem alteração; modelo do `src/worker.ts` (novo) | TRANSCRICAO | [09:11] Larissa |
+| FDD-INT-10b | `docs/FDD.md` | Integração | `server.ts`: `bootstrap`, sinais e `bootstrap_failed` como modelo | CODIGO | src/server.ts |
+| FDD-INT-11 | `docs/FDD.md` | Integração | Proposta: `app.ts` monta repository, service e controller do módulo | TRANSCRICAO | [09:27] Bruno |
+| FDD-INT-11b | `docs/FDD.md` | Integração | `app.ts`: `buildControllers` como ponto de montagem | CODIGO | src/app.ts |
+| FDD-INT-12 | `docs/FDD.md` | Integração | Proposta: `routes/index.ts` monta `/webhooks` e `/admin/webhooks` | TRANSCRICAO | [09:35] Diego |
+| FDD-INT-13 | `docs/FDD.md` | Integração | `database.ts` sem alteração; worker importa o `prisma` e ganha instância própria no seu processo | TRANSCRICAO | [09:30] Bruno |
+| FDD-INT-13b | `docs/FDD.md` | Integração | `database.ts`: `prisma` criado na carga do módulo | CODIGO | src/config/database.ts |
+| FDD-INT-14 | `docs/FDD.md` | Integração | `env.ts` sem alteração; worker exige as mesmas variáveis | CODIGO | src/config/env.ts |
+| FDD-INT-15 | `docs/FDD.md` | Integração | `schema.prisma` ganha o enum, os quatro modelos e o campo de relação em `Customer` | TRANSCRICAO | [09:08] Diego |
+| FDD-INT-16 | `docs/FDD.md` | Integração | `package.json` ganha o script `worker` | TRANSCRICAO | [09:11] Larissa |
+| FDD-INT-17 | `docs/FDD.md` | Integração | Proposta: `tests/setup.ts` apaga as tabelas novas antes de `customer` | CODIGO | tests/setup.ts |
+| FDD-INT-18 | `docs/FDD.md` | Integração | `tests/orders.test.ts` sem alteração; padrão dos testes novos | CODIGO | tests/orders.test.ts |
+| FDD-INT-19 | `docs/FDD.md` | Integração | Proposta: `factories.ts` ganha `createTestWebhook` gravando direto no banco | CODIGO | tests/helpers/factories.ts |
+| FDD-INT-20 | `docs/FDD.md` | Integração | `customer.service.ts` sem alteração nesta fase; exclusão de cliente com webhook responde 500 | CODIGO | src/modules/customers/customer.service.ts |
+| FDD-INT-21 | `docs/FDD.md` | Integração | Proposta: `prisma/seed.ts` apaga as tabelas novas antes de `customer` | CODIGO | prisma/seed.ts |
+| FDD-CA-01 | `docs/FDD.md` | Critério de Aceitação | Mudança pelo `changeStatus` com webhook interessado grava linha pendente; proposta: uma por webhook, com o mesmo `eventId` | TRANSCRICAO | [09:40] Bruno |
+| FDD-CA-02 | `docs/FDD.md` | Critério de Aceitação | Falha na gravação da outbox mantém o status antigo e nenhuma linha; confirma a hipótese do rollback | TRANSCRICAO | [09:40] Bruno |
+| FDD-CA-03 | `docs/FDD.md` | Critério de Aceitação | Webhook que não quer o status não ganha linha; proposta: inativo ou removido também não | TRANSCRICAO | [09:34] Bruno |
+| FDD-CA-04 | `docs/FDD.md` | Critério de Aceitação | Primeiro envio até 2 s depois da gravação, mais o tempo do envio, no caminho feliz | TRANSCRICAO | [09:10] Larissa |
+| FDD-CA-05 | `docs/FDD.md` | Critério de Aceitação | Sem resposta em 10 s, o envio falha; proposta: motivo `WEBHOOK_DELIVERY_TIMEOUT`, estado falhou e próximo envio em 1 min | TRANSCRICAO | [09:42] Diego |
+| FDD-CA-06 | `docs/FDD.md` | Critério de Aceitação | Próximo envio pela tabela da seção 5.3; proposta: falha do envio 6 leva à DLQ | TRANSCRICAO | [09:17] Larissa |
+| FDD-CA-07 | `docs/FDD.md` | Critério de Aceitação | Envios esgotados: entrada na DLQ e linha fora da outbox | TRANSCRICAO | [09:18] Diego |
+| FDD-CA-08 | `docs/FDD.md` | Critério de Aceitação | `X-Signature` verificável com a secret do endpoint; proposta: dois valores nas 24 h após rotação | TRANSCRICAO | [09:22] Sofia |
+| FDD-CA-09 | `docs/FDD.md` | Critério de Aceitação | `X-Event-Id` igual ao `event_id` e estável entre envios da linha | TRANSCRICAO | [09:25] Diego |
+| FDD-CA-10 | `docs/FDD.md` | Critério de Aceitação | Proposta: payload acima de 64 KB não desfaz a mudança de status e vai para a DLQ com `attempts` zero | TRANSCRICAO | [09:24] Larissa |
+| FDD-CA-11 | `docs/FDD.md` | Critério de Aceitação | URL `http` recusada com 400; código `WEBHOOK_INVALID_URL` na proposta da seção 7 (RFC-QA-12) | TRANSCRICAO | [09:23] Sofia |
+| FDD-CA-12 | `docs/FDD.md` | Critério de Aceitação | Proposta: `statuses` inválido recusado com 400 `WEBHOOK_INVALID_EVENT_FILTER` | TRANSCRICAO | [09:33] Marcos |
+| FDD-CA-13 | `docs/FDD.md` | Critério de Aceitação | Reprocessamento sem ADMIN recusado com 403; com ADMIN registra o usuário em log; proposta: 200 e evento `webhook_dead_letter_replayed` | TRANSCRICAO | [09:36] Larissa |
+| FDD-CA-14 | `docs/FDD.md` | Critério de Aceitação | Proposta: reprocessamento mantém `eventId` e payload; segundo reprocessamento recusado com 409 | TRANSCRICAO | [09:18] Diego |
+| FDD-CA-15 | `docs/FDD.md` | Critério de Aceitação | Proposta: secret só nas respostas de cadastro e rotação | TRANSCRICAO | [09:31] Marcos |
+| FDD-CA-16 | `docs/FDD.md` | Critério de Aceitação | Proposta: secret nunca em log; chave `secret` sai como `[REDACTED]` | TRANSCRICAO | [09:22] Diego |
+| FDD-CA-17 | `docs/FDD.md` | Critério de Aceitação | Histórico devolve no máximo 100 envios, do mais recente para o mais antigo (ordem proposta) | TRANSCRICAO | [09:34] Marcos |
+| FDD-CA-18 | `docs/FDD.md` | Critério de Aceitação | Proposta: linha presa há mais de 5 min volta a pendente sem contar envio | CODIGO | src/server.ts |
+| FDD-CA-19 | `docs/FDD.md` | Critério de Aceitação | `npm test` continua passando, com os testes existentes sem alteração e a limpeza de `tests/setup.ts` ajustada | CODIGO | package.json |
+| FDD-RISCO-01 | `docs/FDD.md` | Risco | Endpoint lento segura o ciclo com o envio de uma linha de cada vez | TRANSCRICAO | [09:42] Diego |
+| FDD-RISCO-02 | `docs/FDD.md` | Risco | Linha presa em processando após encerramento no meio do ciclo | CODIGO | src/server.ts |
+| FDD-RISCO-03 | `docs/FDD.md` | Risco | Dois workers rodando, premissa sem garantia (RFC-RISCO-04) | TRANSCRICAO | [09:12] Diego |
+| FDD-RISCO-04 | `docs/FDD.md` | Risco | Worker parado sem ninguém perceber | TRANSCRICAO | [09:10] Larissa |
+| FDD-RISCO-05 | `docs/FDD.md` | Risco | Vazamento da secret por log, banco ou cliente | TRANSCRICAO | [09:22] Diego |
+| FDD-RISCO-06 | `docs/FDD.md` | Risco | Crescimento sem retenção de outbox, histórico e DLQ; arquivamento sem prazo | TRANSCRICAO | [09:08] Diego |
+| FDD-RISCO-07 | `docs/FDD.md` | Risco | Cliente que não deduplica pelo `X-Event-Id` | TRANSCRICAO | [09:25] Diego |
+| FDD-RISCO-08 | `docs/FDD.md` | Risco | Perda de ordem por pedido no retry e no reprocessamento (RFC-QA-05) | TRANSCRICAO | [09:12] Diego |
+| FDD-RISCO-09 | `docs/FDD.md` | Risco | Registro público que aceita ADMIN enfraquece `requireRole` no reprocessamento | CODIGO | src/modules/auth/auth.schemas.ts |
+| FDD-RISCO-10 | `docs/FDD.md` | Risco | Proposta: evento acima de 64 KB fora do at-least-once | TRANSCRICAO | [09:24] Larissa |
+| FDD-RISCO-11 | `docs/FDD.md` | Risco | Transação do `changeStatus` mais longa com leitura de webhooks e gravação na outbox | TRANSCRICAO | [09:40] Bruno |
+| FDD-RISCO-12 | `docs/FDD.md` | Risco | Proposta: exclusão de cliente com webhook responde 500 (`P2003`) | CODIGO | src/middlewares/error.middleware.ts |
+| FDD-RISCO-13 | `docs/FDD.md` | Risco | `fetch` marcado como experimental na documentação do Node 20 | CODIGO | package.json |
+| FDD-PARAM-01 | `docs/FDD.md` | Parâmetro | Polling de 2 s (decidido); proposta: contado a partir do fim do ciclo | TRANSCRICAO | [09:10] Larissa |
+| FDD-PARAM-02 | `docs/FDD.md` | Parâmetro | 1 worker (decidido) | TRANSCRICAO | [09:12] Diego |
+| FDD-PARAM-03 | `docs/FDD.md` | Parâmetro | Proposta: 10 linhas por ciclo ("batch pequeno") | TRANSCRICAO | [09:08] Diego |
+| FDD-PARAM-04 | `docs/FDD.md` | Parâmetro | Proposta: limite de 5 min em processando | CODIGO | src/server.ts |
+| FDD-PARAM-05 | `docs/FDD.md` | Parâmetro | Timeout HTTP de 10 s (decidido) | TRANSCRICAO | [09:42] Diego |
+| FDD-PARAM-06 | `docs/FDD.md` | Parâmetro | Proposta: teto de 6 envios por linha (RFC-QA-08) | TRANSCRICAO | [09:17] Larissa |
+| FDD-PARAM-07 | `docs/FDD.md` | Parâmetro | Intervalos 1 min, 5 min, 30 min, 2 h, 12 h (decidido) | TRANSCRICAO | [09:17] Larissa |
+| FDD-PARAM-08 | `docs/FDD.md` | Parâmetro | Limite de 64 KB (decidido); proposta: medido em bytes do JSON serializado | TRANSCRICAO | [09:24] Larissa |
+| FDD-PARAM-09 | `docs/FDD.md` | Parâmetro | Convivência de 24 h da secret anterior (decidido) | TRANSCRICAO | [09:22] Sofia |
+| FDD-PARAM-10 | `docs/FDD.md` | Parâmetro | Proposta: secret de 32 bytes em hexadecimal | CODIGO | package.json |
+| FDD-PARAM-11 | `docs/FDD.md` | Parâmetro | 100 envios no histórico (decidido) | TRANSCRICAO | [09:34] Marcos |
+| FDD-PARAM-12 | `docs/FDD.md` | Parâmetro | Proposta: corpo da resposta truncado em 4 KB | TRANSCRICAO | [09:34] Marcos |
+| FDD-PARAM-13 | `docs/FDD.md` | Parâmetro | Proposta: `pageSize` padrão 20, como `listOrdersQuerySchema` | CODIGO | src/modules/orders/order.schemas.ts |
+| FDD-PARAM-14 | `docs/FDD.md` | Parâmetro | Proposta: `pageSize` máximo 100, como `listOrdersQuerySchema` | CODIGO | src/modules/orders/order.schemas.ts |
+| FDD-PARAM-15 | `docs/FDD.md` | Parâmetro | Proposta: limiar de 1 min para worker parado (questão 6 do ADR-002) | TRANSCRICAO | [09:10] Larissa |
