@@ -7,8 +7,8 @@
 | Autor | Larissa (Tech Lead), que abre o documento de design (`[09:50] Larissa`) |
 | Status | Em revisão: sessão com Bruno e Diego antes de codar (`[09:50] Larissa`) |
 | Data | 2026-10-18 (redação; reunião técnica de quinta-feira) |
-| Revisores | Bruno (Engenheiro Pleno, Pedidos) e Diego (Engenheiro Sênior, Plataforma): sessão de revisão técnica. Sofia (Engenheira de Segurança): segurança, foco em HMAC e geração de secret (`[09:46] Sofia`). Marcos (Product Manager): RFC-QA-05, RFC-QA-07, RFC-QA-08. Larissa (Tech Lead): autora |
-| Documentos relacionados | [PRD](PRD.md), [FDD](FDD.md) |
+| Revisores | Bruno (Engenheiro Pleno, Pedidos) e Diego (Engenheiro Sênior, Plataforma): sessão de revisão técnica. Sofia (Engenheira de Segurança): segurança, foco em HMAC e geração de secret (`[09:46] Sofia`). Marcos (Product Manager): responde ou aceita RFC-QA-05, RFC-QA-07 e RFC-QA-08. Larissa (Tech Lead): autora |
+| Documentos relacionados | [PRD](PRD.md), [FDD](FDD.md), [Decisões relacionadas](#decisões-relacionadas) |
 
 ## Resumo executivo (TL;DR)
 
@@ -120,7 +120,7 @@ As demais operações aceitam qualquer usuário autenticado nesta fase (`[09:37]
 
 ## Questões em aberto
 
-Estado `lacuna`: ponto não levantado na reunião, identificado na redação; a origem é a fala que o deixou sem definição. **Proposta (a validar):** gatilhos sem fala e quem responde as RFC-QA-01 a RFC-QA-04 são sugestão deste RFC; para as lacunas, propõe-se a sessão de revisão antes de codar (`[09:50] Larissa`).
+Estado `lacuna`: ponto não levantado na reunião, identificado na redação; a origem é a fala que o deixou sem definição. **Proposta (a validar):** gatilhos sem fala e quem responde as RFC-QA-01 a RFC-QA-04 são sugestão deste RFC; para as lacunas, propõe-se a sessão de revisão antes de codar (`[09:50] Larissa`), com quem responde cada uma.
 
 | ID | Pergunta | Origem | Estado | Gatilho de decisão | Responde |
 | --- | --- | --- | --- | --- | --- |
@@ -155,7 +155,7 @@ As demais questões dos ADRs afetam detalhes ou operação e ficam neles.
 - **RFC-RISCO-01**: a estimativa por bloco (1, 1, 0,5 e 0,5 sprint) já fecha 3 sprints antes do "mais um pouco" de HMAC, schemas e validações e da revisão de segurança (`[09:46] Larissa`).
 - **RFC-RISCO-02**: o reprocessamento por ADMIN não é controle forte, porque o registro é público (`src/modules/auth/auth.routes.ts`) e aceita papel ADMIN (ADR-003-CONS-08; opções na questão 6, [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)).
 - **RFC-RISCO-03**: outbox e DLQ crescem sem política de retenção ([ADR-001-CONS-06](adrs/ADR-001-outbox-transacional-no-mysql.md), [ADR-003-CONS-15](adrs/ADR-003-retry-com-backoff-e-dlq.md)).
-- **RFC-RISCO-04**: nada garante o worker único, e dois workers duplicam envios e perdem a ordem, e worker parado não é percebido (ADR-002-CONS-10 e CONS-13; opções nas questões 4 e 6, [ADR-002](adrs/ADR-002-worker-separado-com-polling.md)).
+- **RFC-RISCO-04**: nada garante o worker único: dois workers duplicam envios e perdem a ordem; worker parado não é percebido (ADR-002-CONS-10 e CONS-13; opções nas questões 4 e 6, [ADR-002](adrs/ADR-002-worker-separado-com-polling.md)).
 - **RFC-RISCO-05**: a meta de 10 s só é atendida no caminho feliz: evento cujo primeiro envio falha espera pelo menos 1 min ([ADR-002-CONS-12](adrs/ADR-002-worker-separado-com-polling.md)); ver RFC-QA-07.
 - **RFC-RISCO-06**: se o limite de 64 KB for checado na inserção com erro, a mudança de status do pedido é desfeita pelo tamanho do payload (ADR-007-CONS-09; opções na questão 2, [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 

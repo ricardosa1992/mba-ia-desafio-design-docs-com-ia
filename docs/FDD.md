@@ -19,7 +19,7 @@ Três clientes B2B pedem notificação de mudança de status do pedido abaixo de
 ## 2. Objetivos técnicos
 
 - **FDD-OBJ-01**: numa mudança de status feita pelo `changeStatus` com pelo menos um webhook interessado, a linha da outbox existe se, e somente se, a transação da mudança foi confirmada ([ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)) (`[09:06] Diego`, `[09:40] Bruno`). Vale para payload de até 64 KB; acima disso, na proposta do FDD-FLUXO-02, o evento confirmado vai para a DLQ em vez da outbox (questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
-- **FDD-OBJ-02**: no caminho feliz (fila sem linhas à frente e cliente respondendo), o primeiro envio acontece até 2 s depois da gravação da linha, atraso causado pelo intervalo de polling ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)) (`[09:10] Larissa`). Na proposta de ciclos sem sobreposição (FDD-FLUXO-03, passo 3; FDD-PARAM-01), soma-se a duração do ciclo anterior, que com a fila vazia é só a leitura das linhas. Esse atraso serve à meta de notificação abaixo de 10 s (`[09:02] Marcos`), cujo alcance (só o primeiro envio ou todo evento) está em aberto na [RFC-QA-07](RFC.md#questões-em-aberto).
+- **FDD-OBJ-02**: no caminho feliz (fila sem linhas à frente e cliente respondendo), o primeiro envio acontece até 2 s depois da gravação da linha, atraso causado pelo intervalo de polling ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)) (`[09:10] Larissa`). **Proposta (a validar):** com ciclos sem sobreposição (FDD-FLUXO-03, passo 3; FDD-PARAM-01; lacuna, sem questão aberta no RFC), soma-se a duração do ciclo anterior, que com a fila vazia é só a leitura das linhas; com isso, o atraso pode passar dos 2 s no pior caso aceitos na reunião ([PRD-RNF-02](PRD.md#performance)). Esse atraso serve à meta de notificação abaixo de 10 s (`[09:02] Marcos`), cujo alcance (só o primeiro envio ou todo evento) está em aberto na [RFC-QA-07](RFC.md#questões-em-aberto).
 - **FDD-OBJ-03**: envio que falha, inclusive por timeout HTTP de 10 s (`[09:42] Diego`), é repetido com backoff nos intervalos 1 min, 5 min, 30 min, 2 h e 12 h até o teto de "5 tentativas", e o evento vai para a DLQ quando os envios se esgotam ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:17] Larissa`). A contagem está em aberto ([RFC-QA-08](RFC.md#questões-em-aberto)); só na proposta do FDD-FLUXO-04 (6 envios) os cinco intervalos são usados. O timeout HTTP de 10 s não tem relação com a meta de notificação de 10 s do FDD-OBJ-02.
 - **FDD-OBJ-04**: todo envio leva no `X-Signature` o HMAC-SHA256 do corpo com a secret do endpoint, verificável pelo cliente ([ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)) (`[09:22] Sofia`).
 - **FDD-OBJ-05**: todos os envios de uma linha da outbox levam o mesmo identificador do evento em `X-Event-Id` e em `event_id`, gerado na inserção ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) (`[09:25] Diego`).
@@ -81,7 +81,7 @@ Tabela da outbox no MySQL ([ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.m
 | `orderId` | `String @db.Char(36)` | **Proposta (a validar):** pedido do evento, com `@@index([orderId])`, para a opção de segurar linhas por pedido continuar possível (questão 1 do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md)) | `[09:12] Diego` |
 | `payload` | `Json` | snapshot montado na inserção (seção 6.2) | `[09:52] Bruno` |
 | `status` | `WebhookOutboxStatus @default(PENDING)` | estado da outbox (FDD-DADOS-05); `@@index([status])` | `[09:08] Diego` |
-| `attempts` | `Int @default(0)` | **Proposta (a validar):** envios feitos, gravados na linha para sobreviver a reinício ([ADR-003-CONS-16](adrs/ADR-003-retry-com-backoff-e-dlq.md)) | `[09:17] Larissa` |
+| `attempts` | `Int @default(0)` | **Proposta (a validar):** envios feitos, mais as tentativas sem chamada HTTP do FDD-ERRO-12, gravados na linha para sobreviver a reinício ([ADR-003-CONS-16](adrs/ADR-003-retry-com-backoff-e-dlq.md)) | `[09:17] Larissa` |
 | `nextAttemptAt` | `DateTime @default(now())` | **Proposta (a validar):** momento a partir do qual a linha pode ser enviada ([ADR-003-CONS-16](adrs/ADR-003-retry-com-backoff-e-dlq.md)) | `[09:17] Larissa` |
 | `processingStartedAt` | `DateTime?` | **Proposta (a validar):** momento de entrada em processando, usado para devolver linha presa (questão 7 do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md)) | `src/server.ts` |
 | `lastError` | `String? @db.Text` | **Proposta (a validar):** motivo do último envio que falhou, copiado para a DLQ | `[09:18] Diego` |
@@ -106,7 +106,7 @@ O cliente consulta os últimos 100 envios com sucesso ou falha, payload, respons
 | `durationMs` | `Int` | tempo de resposta em ms | `[09:34] Marcos` |
 | `success` | `Boolean` | sucesso ou falha, pelo critério da seção 5.3 | `[09:34] Marcos` |
 | `errorMessage` | `String? @db.Text` | **Proposta (a validar):** erro de rede ou timeout, quando não há resposta | `[09:42] Diego` |
-| `createdAt` | `DateTime @default(now())` | momento do envio; `@@index([createdAt])` (**Proposta (a validar):**) | `prisma/schema.prisma` |
+| `createdAt` | `DateTime @default(now())` | momento da gravação, no fim do envio (FDD-FLUXO-03, passo 9); `@@index([createdAt])` (**Proposta (a validar):**) | `prisma/schema.prisma` |
 
 ### FDD-DADOS-04: DLQ (`webhook_dead_letter`)
 
@@ -119,7 +119,7 @@ Tabela separada da outbox que guarda payload, motivo da falha e timestamp ([ADR-
 | `webhookId` | `String @db.Char(36)` | **Proposta (a validar):** webhook de destino; `@@index([webhookId])` | `[09:34] Bruno` |
 | `orderId` | `String @db.Char(36)` | **Proposta (a validar):** pedido do evento | `[09:12] Diego` |
 | `payload` | `Json` | snapshot copiado da outbox | `[09:18] Diego` |
-| `reason` | `String @db.Text` | motivo da falha: último status HTTP ou erro, ou tamanho acima de 64 KB (FDD-FLUXO-02) | `[09:18] Diego` |
+| `reason` | `String @db.Text` | motivo da falha: último status HTTP ou erro, ou, **Proposta (a validar):**, tamanho acima de 64 KB (FDD-FLUXO-02, questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) | `[09:18] Diego` |
 | `attempts` | `Int` | **Proposta (a validar):** envios feitos; zero no caso de payload acima de 64 KB | `[09:24] Larissa` |
 | `createdAt` | `DateTime @default(now())` | timestamp de entrada na DLQ; `@@index([createdAt])` (**Proposta (a validar):**) | `[09:18] Diego` |
 | `replayedAt` | `DateTime?` | **Proposta (a validar):** quando foi reprocessado | `[09:36] Sofia` |
@@ -271,7 +271,7 @@ As tabelas entram numa migração nova em `prisma/migrations/`, com nome gerado 
 2. **Proposta (a validar):** logo depois de `tx.orderStatusHistory.create` e antes da releitura `tx.order.findUnique`, ainda no callback de `$transaction`, chama `publishWebhookEvent(tx, order, from, to)` (`[09:41] Bruno`; ponto escolhido em `src/modules/orders/order.service.ts`; lacuna, sem questão aberta no RFC). O `order` é o lido no início da transação, com `id`, `orderNumber`, `customerId` e `totalCents`.
 3. `publishWebhookEvent` lê, com o `tx`, os webhooks do cliente do pedido (`customerId`) com `active` verdadeiro e `deletedAt` nulo (**Proposta (a validar):**, questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) (`[09:21] Sofia`).
 4. Filtra os webhooks cuja lista `statuses` contém o status do pedido de destino (`to`). Sem nenhum, retorna sem gravar (`[09:34] Bruno`). Nota técnica: filtrar na hora do envio foi descartado, porque grava linhas que ninguém vai receber (`[09:34] Bruno`).
-5. Monta o payload uma vez (snapshot, seção 6.2) (`[09:52] Bruno`). O `event_id` é gerado com `v4` do pacote `uuid`, já declarado no `package.json` e usado em `src/middlewares/request-logger.middleware.ts` ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) (`[09:25] Diego`). **Proposta (a validar):** o `timestamp` do payload é o momento da gravação, em ISO 8601 UTC com milissegundos, para o cliente conseguir ordenar mudanças próximas ([RFC-QA-05](RFC.md#questões-em-aberto)) (`[09:43] Diego`).
+5. Monta o payload uma vez (snapshot, seção 6.2) (`[09:52] Bruno`). O `event_id` é gerado com `v4` do pacote `uuid`, já declarado no `package.json` e usado em `src/middlewares/request-logger.middleware.ts` ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) (`[09:25] Diego`). **Proposta (a validar):** o `timestamp` do payload é o momento da mudança, lido na gravação, dentro da transação, em ISO 8601 UTC com milissegundos, para o cliente conseguir ordenar mudanças próximas ([RFC-QA-05](RFC.md#questões-em-aberto)) (`[09:43] Diego`).
 6. Mede o tamanho do JSON serializado em bytes. Acima de 64 KB, segue o FDD-FLUXO-02.
 7. **Proposta (a validar):** grava com `tx.webhookOutbox.createMany` uma linha por webhook interessado, todas com o mesmo `eventId`, estado da outbox pendente, `attempts` zero e `nextAttemptAt` igual ao momento da gravação (questão 2 do [ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) (`[09:34] Bruno`).
 8. Erro em qualquer gravação propaga, e a transação inteira é desfeita: o status do pedido não muda (`[09:40] Bruno`). **Hipótese:** o Prisma 5.22.0 desfaz tudo o que o `tx` gravou quando o callback lança erro ([ADR-001-CONS-05](adrs/ADR-001-outbox-transacional-no-mysql.md)). Confirmar com um teste de integração no padrão de `tests/orders.test.ts` que força falha na gravação da outbox após `PATCH /api/v1/orders/:id/status` e confere a ausência da linha e o status do pedido antigo.
@@ -289,7 +289,7 @@ sequenceDiagram
   DB-->>P: webhooks do cliente
   alt nenhum webhook quer o status de destino
     P-->>S: retorna sem gravar
-  else payload acima de 64 KB
+  else payload acima de 64 KB, proposta do FDD-FLUXO-02
     P->>DB: uma entrada na DLQ por webhook interessado, com o motivo
     P-->>S: retorna sem lançar erro
   else caminho normal
@@ -388,7 +388,7 @@ sequenceDiagram
 3. **Proposta (a validar):** grava uma linha nova na outbox com o `eventId`, o `webhookId`, o `orderId` e o payload originais, estado da outbox pendente e `attempts` zero, e marca a entrada da DLQ com `replayedAt` e `replayedById` (`req.user.id`) ([RFC-QA-11](RFC.md#questões-em-aberto)) (`[09:18] Diego`, `[09:36] Sofia`). Com identificador novo, o passo reescreveria o `event_id` dentro do payload antes de gravar.
 4. Registra em log quem reprocessou, para auditoria (`[09:36] Sofia`). **Proposta (a validar):** evento Pino `webhook_dead_letter_replayed` com `userId`, `email`, `deadLetterId` e `eventId`, pelo `logger` de `src/shared/logger/index.ts`, com o nome do evento em snake_case como `server_started` em `src/server.ts` e os campos em camelCase como `requestId` em `src/middlewares/request-logger.middleware.ts`.
 5. **Proposta (a validar):** entrega o snapshot como está, mesmo que o pedido já tenha eventos mais novos entregues; o cliente ordena pelo `timestamp` do payload (questão 5 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:18] Diego`).
-6. **Proposta (a validar):** recusa a entrada gravada por tamanho acima de 64 KB (FDD-FLUXO-02), reconhecida por `attempts` igual a zero, único caso em que a DLQ recebe um evento sem envio, porque reenviá-la mandaria ao cliente um payload acima do limite (`[09:24] Larissa`; questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
+6. **Proposta (a validar):** recusa a entrada gravada por tamanho acima de 64 KB (FDD-FLUXO-02), reconhecida por `attempts` igual a zero, único caso em que a DLQ recebe um evento com `attempts` zero, porque reenviá-la mandaria ao cliente um payload acima do limite; esse evento não volta à entrega pelo reprocessamento, exceção registrada no [ADR-003-CONS-04](adrs/ADR-003-retry-com-backoff-e-dlq.md) (`[09:24] Larissa`; questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 
 O papel ADMIN não é controle forte, porque `POST /api/v1/auth/register` é público e aceita `role: 'ADMIN'` ([ADR-003-CONS-08](adrs/ADR-003-retry-com-backoff-e-dlq.md)).
 
@@ -416,7 +416,7 @@ sequenceDiagram
 1. **Proposta (a validar):** o cliente chama `POST /api/v1/webhooks/:id/secret/rotate` (`[09:21] Sofia`; lacuna, sem questão aberta no RFC).
 2. **Proposta (a validar):** o service gera a secret nova com `crypto.randomBytes(32)` em hexadecimal, 64 caracteres, do módulo nativo `crypto` do Node 20 (`package.json`, `engines.node`; lacuna, sem questão aberta no RFC).
 3. Numa transação, a secret atual vai para `previousSecret`, `previousSecretExpiresAt` recebe o momento da rotação mais 24 h e a secret nova ocupa `secret` (`[09:21] Sofia`).
-4. **Proposta (a validar):** uma nova rotação dentro das 24 h descarta a secret anterior mais antiga: a secret atual passa a ser a anterior, com nova expiração, e só duas secrets valem ao mesmo tempo (`[09:21] Sofia`; lacuna, sem questão aberta no RFC).
+4. **Proposta (a validar):** uma nova rotação dentro das 24 h descarta a secret anterior mais antiga: a secret atual passa a ser a anterior, com nova expiração, e só duas secrets valem ao mesmo tempo (`[09:21] Sofia`; questão 6 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)). Essa opção encurta a convivência de 24 h da secret mais antiga.
 5. A resposta devolve a secret nova e o momento em que a anterior expira (seção 6.1).
 6. **Proposta (a validar):** ao assinar, o worker compara `previousSecretExpiresAt` com o momento do envio. Se a anterior ainda vale, o `X-Signature` leva dois valores separados por vírgula, primeiro o da secret nova; senão, só o da secret atual. Nenhuma tarefa agendada apaga a secret expirada; ela fica sem efeito até a próxima rotação ([RFC-QA-09](RFC.md#questões-em-aberto)) (`[09:21] Sofia`, `[09:22] Sofia`). Se a questão escolher assinar só com a secret nova, o passo envia sempre um único valor.
 7. **Proposta (a validar):** as secrets são lidas do cadastro no momento do envio, então uma linha gravada antes da rotação é assinada com as secrets vigentes quando é enviada (`[09:22] Sofia`).
@@ -523,7 +523,7 @@ Status:
 - `400`: `WEBHOOK_VALIDATION_ERROR`, `customerId` ausente ou não UUID, ou paginação fora da faixa (**Proposta (a validar):**, [RFC-QA-12](RFC.md#questões-em-aberto)).
 - `401`: `UNAUTHORIZED`.
 
-Semântica: leitura sem efeito no banco; webhooks removidos (`deletedAt` preenchido) não aparecem. A resposta nunca contém `secret` nem `previousSecret`.
+Semântica: leitura sem efeito no banco. **Proposta (a validar):** webhooks removidos (`deletedAt` preenchido) não aparecem (questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)). A resposta nunca contém `secret` nem `previousSecret`.
 
 #### FDD-CONTRATO-03: PATCH /api/v1/webhooks/:id
 
@@ -567,7 +567,7 @@ Status:
 - `200`: webhook atualizado.
 - `400`: `WEBHOOK_INVALID_URL` para URL inválida ou sem `https`; `WEBHOOK_INVALID_EVENT_FILTER` para `statuses` vazio, com repetição ou com valor fora de `OrderStatus` (**Proposta (a validar):**, lacuna, sem questão aberta no RFC) (`[09:33] Marcos`); `WEBHOOK_VALIDATION_ERROR` para os demais erros de schema (**Proposta (a validar):**, [RFC-QA-12](RFC.md#questões-em-aberto)).
 - `401`: `UNAUTHORIZED`.
-- `404`: `WEBHOOK_NOT_FOUND`, webhook inexistente ou removido (`[09:28] Bruno`).
+- `404`: `WEBHOOK_NOT_FOUND`, webhook inexistente (`[09:28] Bruno`) ou, **Proposta (a validar):**, removido (questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 
 Semântica: atualiza a linha em `webhook_endpoints`. A nova lista de status vale só para eventos gravados depois da edição ([ADR-007-CONS-05](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)). A resposta nunca contém a secret.
 
@@ -597,7 +597,7 @@ Status:
 - `204`: webhook removido.
 - `400`: `WEBHOOK_VALIDATION_ERROR`, `id` não UUID (**Proposta (a validar):**, [RFC-QA-12](RFC.md#questões-em-aberto)).
 - `401`: `UNAUTHORIZED`.
-- `404`: `WEBHOOK_NOT_FOUND`, webhook inexistente ou já removido (`[09:28] Bruno`).
+- `404`: `WEBHOOK_NOT_FOUND`, webhook inexistente (`[09:28] Bruno`) ou, **Proposta (a validar):**, já removido (questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 
 Semântica: **Proposta (a validar):** remoção lógica, que grava `deletedAt` e tira o webhook do filtro na inserção e da listagem; linhas já gravadas na outbox continuam e são entregues com a URL e a secret do cadastro (questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) (`[09:33] Bruno`).
 
@@ -629,9 +629,9 @@ Status:
 - `200`: secret rotacionada, com a secret nova e o momento em que a anterior expira.
 - `400`: `WEBHOOK_VALIDATION_ERROR`, `id` não UUID (**Proposta (a validar):**, [RFC-QA-12](RFC.md#questões-em-aberto)).
 - `401`: `UNAUTHORIZED`.
-- `404`: `WEBHOOK_NOT_FOUND`, webhook inexistente ou removido (`[09:28] Bruno`).
+- `404`: `WEBHOOK_NOT_FOUND`, webhook inexistente (`[09:28] Bruno`) ou, **Proposta (a validar):**, removido (questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 
-Semântica: executa a seção 5.5 (passos 2 a 4). A secret anterior não aparece na resposta; ela vale por 24 h em paralelo e depois deixa de ser usada na assinatura (`[09:21] Sofia`).
+Semântica: executa a seção 5.5 (passos 2 a 4). A secret anterior não aparece na resposta; ela vale por 24 h em paralelo (`[09:21] Sofia`). **Proposta (a validar):** nesse período a assinatura leva também o valor da secret anterior, que depois deixa de ser usada ([RFC-QA-09](RFC.md#questões-em-aberto)); uma nova rotação dentro das 24 h descarta a secret mais antiga (questão 6 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)).
 
 #### FDD-CONTRATO-06: GET /api/v1/webhooks/:id/deliveries
 
@@ -674,7 +674,7 @@ Status:
 - `200`: até 100 envios do webhook.
 - `400`: `WEBHOOK_VALIDATION_ERROR`, `id` não UUID (**Proposta (a validar):**, [RFC-QA-12](RFC.md#questões-em-aberto)).
 - `401`: `UNAUTHORIZED`.
-- `404`: `WEBHOOK_NOT_FOUND`, webhook inexistente ou removido (`[09:28] Bruno`).
+- `404`: `WEBHOOK_NOT_FOUND`, webhook inexistente (`[09:28] Bruno`). **Proposta (a validar):** o histórico de webhook removido continua consultável, porque as linhas gravadas antes da remoção ainda são entregues (FDD-CONTRATO-04, questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 
 Semântica: **Proposta (a validar):** lê `webhook_deliveries` e devolve os últimos 100 envios do webhook, do mais recente para o mais antigo, sem paginação, com `responseBody` truncado em 4 KB (FDD-DADOS-03). Sem efeito no banco; a resposta nunca contém a secret nem os headers enviados.
 
@@ -726,7 +726,7 @@ Request enviado pelo worker à URL do webhook, com os headers combinados na reun
 | `Content-Type` | `application/json` | corpo JSON | `[09:44] Diego` |
 | `X-Event-Id` | UUID do evento, igual ao `event_id` do corpo | chave de deduplicação, a mesma em todos os envios da linha ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) | `[09:25] Diego` |
 | `X-Signature` | **Proposta (a validar):** HMAC-SHA256 do corpo bruto enviado, em hexadecimal minúsculo; durante a convivência de 24 h, dois valores separados por vírgula, primeiro o da secret nova ([RFC-QA-09](RFC.md#questões-em-aberto)). Sem esquema com timestamp no header | origem e integridade do corpo ([ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)) | `[09:22] Sofia` |
-| `X-Timestamp` | **Proposta (a validar):** momento do envio em ISO 8601 UTC; não entra no que é assinado ([RFC-QA-10](RFC.md#questões-em-aberto)) | momento do envio, diferente do `timestamp` do payload | `[09:44] Diego` |
+| `X-Timestamp` | momento do envio (`[09:44] Diego`); fica fora do que é assinado, como decidido (`[09:22] Sofia`), e a mudança está em aberto na [RFC-QA-10](RFC.md#questões-em-aberto). **Proposta (a validar):** em ISO 8601 UTC | momento do envio, diferente do `timestamp` do payload | `[09:44] Diego` |
 | `X-Webhook-Id` | `id` do webhook em `webhook_endpoints` | diz ao cliente com vários cadastros qual webhook recebeu o envio | `[09:44] Sofia` |
 
 Enquanto a [RFC-QA-10](RFC.md#questões-em-aberto) não for respondida, o `X-Timestamp` fica fora da assinatura, como decidido, e não protege contra o reenvio de uma requisição capturada ([ADR-004-CONS-07](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)) (`[09:22] Sofia`).
@@ -775,7 +775,7 @@ export function isValidSignature(rawBody: Buffer, header: string, secret: string
 }
 ```
 
-Deduplicação: o cliente descarta repetições pelo `X-Event-Id` ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) (`[09:25] Diego`). Com vários webhooks, o mesmo `event_id` chega a cada destino; na proposta de uma linha por webhook de destino (FDD-DADOS-02), a chave é o par `X-Webhook-Id` e `X-Event-Id` (questão 2 do [ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)). No reprocessamento da DLQ, a deduplicação só cobre o reenvio se o identificador original for mantido ([RFC-QA-11](RFC.md#questões-em-aberto)).
+Deduplicação: o cliente descarta repetições pelo `X-Event-Id` ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) (`[09:25] Diego`). Com vários webhooks, o mesmo `event_id` chega a cada destino; na proposta de uma linha por webhook de destino (FDD-DADOS-02), a chave é o par `X-Webhook-Id` e `X-Event-Id` (questão 2 do [ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)). No reprocessamento da DLQ, a deduplicação só cobre o reenvio se o identificador original for mantido ([RFC-QA-11](RFC.md#questões-em-aberto)). Por quanto tempo o cliente guarda os identificadores está em aberto (questão 3 do [ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)).
 
 ### 6.3 Contrato interno publishWebhookEvent
 
@@ -798,7 +798,7 @@ export async function publishWebhookEvent(
 O tipo do `tx` é `Prisma.TransactionClient`, porque o alias `TxClient` de `src/modules/orders/order.service.ts` não é exportado.
 
 - **Pré-condições**: chamada dentro do callback de `$transaction` do `changeStatus`, depois de gravar status e histórico; `fromStatus` diferente de `toStatus` e transição já validada por `canTransition` (`src/modules/orders/order.status.ts`).
-- **Efeitos**: nenhuma linha, se nenhum webhook ativo do cliente quer `toStatus`; senão, uma linha pendente na outbox por webhook interessado, com o mesmo `eventId` (FDD-FLUXO-01), ou uma entrada na DLQ por webhook interessado, se o payload passa de 64 KB (FDD-FLUXO-02).
+- **Efeitos**: nenhuma linha, se nenhum webhook ativo do cliente quer `toStatus`; senão, uma linha pendente na outbox por webhook interessado, com o mesmo `eventId` (FDD-FLUXO-01), ou, **Proposta (a validar):**, uma entrada na DLQ por webhook interessado, se o payload passa de 64 KB (FDD-FLUXO-02, questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 - **Erros**: erro do Prisma em leitura ou gravação é lançado, e a transação é desfeita (`[09:40] Bruno`). **Proposta (a validar):** payload acima de 64 KB não lança erro (questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 - **Não faz**: não chama HTTP, não abre transação própria, não lê os itens do pedido e não loga a secret.
 
@@ -834,7 +834,7 @@ Os erros das rotas do módulo saem no formato `{ error: { code, message, details
 | FDD-ERRO-01 | `WEBHOOK_VALIDATION_ERROR` | 400 | `BadRequestError`, lançado pelo `validate` com o código padrão do schema | **Proposta (a validar):** body, query ou params fora do schema, fora dos campos `url` e `statuses`, em qualquer contrato da seção 6.1 (FDD-CONTRATO-01 a FDD-CONTRATO-07): `id` ou `customerId` que não é UUID, paginação fora da faixa no FDD-CONTRATO-02, body sem nenhum campo no FDD-CONTRATO-03 ([RFC-QA-12](RFC.md#questões-em-aberto)) | `[09:29] Larissa` |
 | FDD-ERRO-02 | `WEBHOOK_INVALID_URL` | 400 | `BadRequestError`; **Proposta (a validar):** lançado pelo `validate` com o código do campo `url` ([RFC-QA-12](RFC.md#questões-em-aberto)) | `url` inválida ou sem `https` no FDD-CONTRATO-01 e no FDD-CONTRATO-03; o nome do código é da reunião, e a forma de produzi-lo é a proposta da abertura desta seção ([RFC-QA-12](RFC.md#questões-em-aberto)) | `[09:28] Bruno`, `[09:23] Sofia` |
 | FDD-ERRO-03 | `WEBHOOK_INVALID_EVENT_FILTER` | 400 | `BadRequestError`, lançado pelo `validate` com o código do campo `statuses` | **Proposta (a validar):** `statuses` vazio, com valor repetido ou com valor fora de `OrderStatus` (`prisma/schema.prisma`) no FDD-CONTRATO-01 e no FDD-CONTRATO-03; nome não dito, lacuna, sem questão aberta no RFC | `[09:33] Marcos` |
-| FDD-ERRO-04 | `WEBHOOK_NOT_FOUND` | 404 | `AppError`; **Proposta (a validar):** pela subclasse `WebhookNotFoundError` em `src/modules/webhooks/webhook.errors.ts` (novo) ([RFC-QA-12](RFC.md#questões-em-aberto)) | webhook inexistente ou removido (**Proposta (a validar):** remoção lógica com `deletedAt` preenchido, questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) no FDD-CONTRATO-03, no FDD-CONTRATO-04, no FDD-CONTRATO-05 e no FDD-CONTRATO-06 | `[09:28] Bruno` |
+| FDD-ERRO-04 | `WEBHOOK_NOT_FOUND` | 404 | `AppError`; **Proposta (a validar):** pela subclasse `WebhookNotFoundError` em `src/modules/webhooks/webhook.errors.ts` (novo) ([RFC-QA-12](RFC.md#questões-em-aberto)) | webhook inexistente no FDD-CONTRATO-03, no FDD-CONTRATO-04, no FDD-CONTRATO-05 e no FDD-CONTRATO-06, ou removido (**Proposta (a validar):** remoção lógica com `deletedAt` preenchido, questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) no FDD-CONTRATO-03, no FDD-CONTRATO-04 e no FDD-CONTRATO-05; o histórico de webhook removido continua consultável (FDD-CONTRATO-06) | `[09:28] Bruno` |
 | FDD-ERRO-05 | `WEBHOOK_CUSTOMER_NOT_FOUND` | 404 | `AppError`, pela subclasse `WebhookCustomerNotFoundError` em `src/modules/webhooks/webhook.errors.ts` (novo) | **Proposta (a validar):** `customerId` sem cliente correspondente no FDD-CONTRATO-01, checado como `CustomerService.getById` (`src/modules/customers/customer.service.ts`) ([RFC-QA-12](RFC.md#questões-em-aberto)) | `[09:32] Larissa` |
 | FDD-ERRO-06 | `WEBHOOK_DEAD_LETTER_NOT_FOUND` | 404 | `AppError`, pela subclasse `WebhookDeadLetterNotFoundError` em `src/modules/webhooks/webhook.errors.ts` (novo) | **Proposta (a validar):** entrada da DLQ inexistente no FDD-CONTRATO-07 ([RFC-QA-12](RFC.md#questões-em-aberto)) | `[09:18] Diego` |
 | FDD-ERRO-07 | `WEBHOOK_DEAD_LETTER_ALREADY_REPLAYED` | 409 | `ConflictError` | **Proposta (a validar):** entrada da DLQ com `replayedAt` preenchido no FDD-CONTRATO-07 ([RFC-QA-11](RFC.md#questões-em-aberto)) | `[09:18] Diego` |
@@ -851,7 +851,7 @@ Com a primeira opção da questão 1 do [ADR-006](adrs/ADR-006-reuso-dos-padroes
 | FDD-ERRO-09 | `WEBHOOK_DELIVERY_TIMEOUT` | `lastError`; `reason` se for o último envio; `errorMessage` no histórico | **Proposta (a validar):** nome do motivo de um envio sem resposta em 10 s (timeout HTTP, `AbortSignal.timeout`) | envio falho: estado da outbox falhou com próximo envio agendado (FDD-FLUXO-04) ou, sem envios restantes, DLQ (FDD-FLUXO-05) ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) | `[09:42] Diego` |
 | FDD-ERRO-10 | `WEBHOOK_DELIVERY_HTTP_ERROR` | `lastError`; `reason` se for o último envio; no histórico, `responseStatus` e `responseBody`, sem `errorMessage` | **Proposta (a validar):** resposta com status fora de 2xx (questão 2 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) | o mesmo do FDD-ERRO-09 | `[09:42] Diego` |
 | FDD-ERRO-11 | `WEBHOOK_DELIVERY_NETWORK_ERROR` | `lastError`; `reason` se for o último envio; `errorMessage` no histórico | **Proposta (a validar):** o `fetch` falha sem resposta: DNS, conexão recusada, falha de TLS | o mesmo do FDD-ERRO-09 | `[09:42] Diego` |
-| FDD-ERRO-12 | `WEBHOOK_SECRET_REQUIRED` | `lastError`; `reason` se for o último envio; `errorMessage` no histórico | **Proposta (a validar):** o webhook não tem secret utilizável no momento de assinar: coluna `secret` vazia por edição direta no banco, ou falha ao decifrar se a questão 4 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md) escolher cifrar | o worker não envia sem assinatura e não faz a chamada HTTP; a falha conta em `attempts` como um envio e o histórico ganha uma linha com `responseStatus` nulo, `durationMs` 0 e o motivo em `errorMessage`, seguindo o retry. Nunca é resposta da API, porque a secret é gerada pela plataforma. Alternativa registrada: descartar o código (questão 2 do [ADR-006](adrs/ADR-006-reuso-dos-padroes-do-projeto.md)) | `[09:28] Bruno`, `[09:31] Marcos` |
+| FDD-ERRO-12 | `WEBHOOK_SECRET_REQUIRED` | `lastError`; `reason` se for o último envio; `errorMessage` no histórico | **Proposta (a validar):** o webhook não tem secret utilizável no momento de assinar: coluna `secret` vazia por edição direta no banco, ou falha ao decifrar se a questão 4 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md) escolher cifrar | o worker não envia sem assinatura e não faz a chamada HTTP; a falha conta em `attempts` como tentativa sem chamada HTTP, para que o teto leve a linha à DLQ, e o histórico ganha uma linha com `responseStatus` nulo, `durationMs` 0 e o motivo em `errorMessage`, seguindo o retry; a linha pode esgotar o teto sem nenhuma chamada HTTP e fica fora do at-least-once ([ADR-005-CONS-12](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)). Nunca é resposta da API, porque a secret é gerada pela plataforma. Alternativa registrada: descartar o código (questão 2 do [ADR-006](adrs/ADR-006-reuso-dos-padroes-do-projeto.md)) | `[09:28] Bruno`, `[09:31] Marcos` |
 | FDD-ERRO-13 | `WEBHOOK_PAYLOAD_TOO_LARGE` | `reason` da DLQ, gravado por `publishWebhookEvent` | **Proposta (a validar):** snapshot com mais de 64 KB no momento da gravação (FDD-FLUXO-02, questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) | entrada na DLQ com `attempts` zero, sem envio e sem erro na transação do `changeStatus`; o reprocessamento dela é recusado com o FDD-ERRO-08 | `[09:24] Larissa` |
 
 ### Como os códigos são produzidos
@@ -886,13 +886,13 @@ router.post(
 
 ## 8. Estratégias de resiliência
 
-- **FDD-RES-01**: timeout HTTP de 10 s em todo envio, com `AbortSignal.timeout` no `fetch`; o envio abortado conta como falha com o motivo do FDD-ERRO-09 (seção 5.2, passo 8) ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:42] Diego`). Não tem relação com a meta de notificação abaixo de 10 s do FDD-OBJ-02.
+- **FDD-RES-01**: timeout HTTP de 10 s em todo envio, com `AbortSignal.timeout` no `fetch`; o envio abortado conta como falha (seção 5.2, passo 8); **Proposta (a validar):** com o motivo `WEBHOOK_DELIVERY_TIMEOUT` do FDD-ERRO-09 (lacuna, sem questão aberta no RFC) ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:42] Diego`). Não tem relação com a meta de notificação abaixo de 10 s do FDD-OBJ-02.
 - **FDD-RES-02**: retry com backoff nos intervalos 1 min, 5 min, 30 min, 2 h e 12 h, pela tabela da seção 5.3 ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:17] Larissa`). **Proposta (a validar):** 6 envios por linha, envio inicial mais 5 retentativas ([RFC-QA-08](RFC.md#questões-em-aberto)), e falha é qualquer resposta fora de 2xx, erro de rede ou timeout HTTP (questão 2 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:42] Diego`).
 - **FDD-RES-03**: DLQ em tabela separada quando os envios se esgotam (seção 5.4, FDD-FLUXO-05) ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:18] Diego`). **Proposta (a validar):** a linha é copiada para a DLQ e removida da outbox na mesma transação, e o estado da outbox falhou significa "aguarda o próximo envio", não DLQ (questão 3 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)).
 - **FDD-RES-04**: o reprocessamento manual por ADMIN devolve o evento à outbox como pendente (FDD-FLUXO-06) ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:18] Diego`). **Proposta (a validar):** mesmo `eventId` e mesmo payload ([RFC-QA-11](RFC.md#questões-em-aberto)), snapshot entregue como está (questão 5 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) e recusa da segunda tentativa sobre a mesma entrada (FDD-ERRO-07).
 - **FDD-RES-05**: **Proposta (a validar):** linha em processando há mais de 5 min volta a pendente no início do ciclo, sem contar envio (FDD-FLUXO-03, passo 4; questão 7 do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md)) (`src/server.ts`). A duplicata possível é tolerada pelo [ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md).
 - **FDD-RES-06**: **Proposta (a validar):** no `SIGINT` ou `SIGTERM`, o worker não inicia novo ciclo, espera o ciclo em andamento e desconecta do banco (FDD-FLUXO-03, passo 10; questão 8 do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md)) (`src/server.ts`). Um supervisor que mate o processo antes disso deixa linhas em processando, que caem no FDD-RES-05.
-- **FDD-RES-07**: **Proposta (a validar):** erro inesperado dentro de um ciclo (falha de consulta, erro ao gravar o resultado) é capturado pelo loop, que loga `webhook_cycle_failed` com o erro, não encerra o processo e tenta de novo no próximo ciclo; linhas que ficaram em processando voltam pelo FDD-RES-05. Erro na conexão com o banco no início do worker (`prisma.$connect()` no `bootstrap`) encerra o processo com o log `bootstrap_failed` em nível fatal e código de saída 1, como `src/server.ts`. O error middleware não atua no worker, que trata e loga os próprios erros (`src/middlewares/error.middleware.ts`; [ADR-006-CONS-05](adrs/ADR-006-reuso-dos-padroes-do-projeto.md)). Lacuna, sem questão aberta no RFC.
+- **FDD-RES-07**: **Proposta (a validar):** erro inesperado dentro de um ciclo (falha de consulta, erro ao gravar o resultado) é capturado pelo loop, que loga `webhook_cycle_failed` com o erro, não encerra o processo e tenta de novo no próximo ciclo; linhas que ficaram em processando voltam pelo FDD-RES-05. Erro na conexão com o banco no início do worker (`prisma.$connect()` no `bootstrap`) encerra o processo com o log `bootstrap_failed` em nível fatal e código de saída 1, o mesmo tratamento de `src/server.ts`; o `$connect` no `bootstrap` é novo no worker, porque a API abre a conexão na primeira consulta. O error middleware não atua no worker, que trata e loga os próprios erros (`src/middlewares/error.middleware.ts`; [ADR-006-CONS-05](adrs/ADR-006-reuso-dos-padroes-do-projeto.md)). Lacuna, sem questão aberta no RFC.
 - **FDD-RES-08**: invariante (a): uma linha pendente é gravada na outbox para um webhook se, e somente se, uma mudança de status do pedido feita pelo `changeStatus` foi confirmada e esse webhook estava interessado nela ([ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)) (`[09:40] Bruno`). Exceções criadas por propostas: payload acima de 64 KB vai para a DLQ, e não para a outbox (FDD-FLUXO-02, questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)); mudanças fora do `changeStatus` não geram linha (FDD-ESC-15, questão 2 do [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)); o reprocessamento grava linha sem mudança de status nova (FDD-FLUXO-06, [RFC-QA-11](RFC.md#questões-em-aberto)).
 - **FDD-RES-09**: invariante (b): nenhuma linha sai da outbox sem estar entregue ou copiada para a DLQ na mesma transação ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)). **Proposta (a validar):** a única remoção é a do FDD-FLUXO-05 (questão 3 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)); linhas entregues ficam na tabela, porque o arquivamento está fora do escopo (FDD-ESC-11) (`[09:18] Diego`, `[09:08] Diego`).
 - **FDD-RES-10**: invariante (c): todos os envios de uma linha usam o mesmo `eventId` e o mesmo corpo, lidos do snapshot gravado ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md), [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) (`[09:25] Diego`). O `X-Timestamp` muda a cada envio e, na proposta do FDD-FLUXO-07 (passo 7, [RFC-QA-09](RFC.md#questões-em-aberto)), o `X-Signature` muda se a secret for rotacionada entre dois envios.
@@ -921,7 +921,7 @@ router.post(
 
 **FDD-OBS-03**: **Proposta (a validar):** as duas opções da questão 3 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md) juntas: `secret`, `previousSecret`, `*.secret` e `*.previousSecret` entram no `redactPaths` de `src/shared/logger/index.ts`, e o módulo nunca loga o cadastro completo do webhook nem os headers enviados, inclusive o `X-Signature` (`[09:22] Diego`). **Hipótese:** no formato de caminhos do `redact` do Pino, `*.secret` cobre a chave um nível abaixo da raiz do objeto logado, e não no primeiro nível, por isso entram também `secret` e `previousSecret`; confirmar no teste do FDD-CA-16.
 
-**FDD-OBS-04**: a auditoria do reprocessamento registra o usuário que o fez (`[09:36] Sofia`), pelo evento `webhook_dead_letter_replayed` descrito no FDD-FLUXO-06, passo 4. O log `http_request` da mesma requisição já traz `userId` (`src/middlewares/request-logger.middleware.ts`).
+**FDD-OBS-04**: a auditoria do reprocessamento registra o usuário que o fez (`[09:36] Sofia`), pelo log do FDD-FLUXO-06, passo 4 (**Proposta (a validar):** evento `webhook_dead_letter_replayed`; lacuna, sem questão aberta no RFC). O log `http_request` da mesma requisição já traz `userId` (`src/middlewares/request-logger.middleware.ts`).
 
 **FDD-OBS-05**: **Proposta (a validar):** `publishWebhookEvent` não loga, porque um log dentro da transação registraria evento de uma mudança de status que ainda pode ser desfeita (`[09:40] Bruno`). A entrada gravada na DLQ por payload acima de 64 KB é percebida pela consulta das entradas sem reprocessamento (FDD-OBS-06), reconhecível por `attempts` igual a zero, e o FDD-CONTRATO-09 continua com retorno `Promise<void>`. Lacuna, sem questão aberta no RFC.
 
@@ -933,7 +933,7 @@ router.post(
 | --- | --- | --- | --- |
 | Linhas por estado da outbox | contagem de `webhook_outbox` agrupada por `status` | volume e acúmulo de linhas pendentes e em falhou | `[09:08] Diego` |
 | Idade da linha elegível mais antiga | diferença entre o momento da consulta e o menor `nextAttemptAt` das linhas em estado da outbox pendente ou falhou com `nextAttemptAt` vencido | worker parado ou atrasado (FDD-OBS-11) | `[09:10] Larissa` |
-| Atraso até o primeiro envio | para cada linha, diferença entre o `createdAt` da linha e o `createdAt` do primeiro registro em `webhook_deliveries` com o mesmo `eventId` e `webhookId` gravado depois dela | acompanhar a meta de notificação abaixo de 10 s, cujo alcance está em aberto na [RFC-QA-07](RFC.md#questões-em-aberto) | `[09:02] Marcos` |
+| Atraso até o primeiro envio | para cada linha, diferença entre o `createdAt` da linha e o `createdAt` do primeiro registro em `webhook_deliveries` com o mesmo `eventId` e `webhookId` gravado depois dela, menos o `durationMs` desse registro | acompanhar a meta de notificação abaixo de 10 s, cujo alcance está em aberto na [RFC-QA-07](RFC.md#questões-em-aberto) | `[09:02] Marcos` |
 | Taxa de sucesso por webhook | proporção de registros com `success` verdadeiro em `webhook_deliveries`, por `webhookId` e período | sucesso ou falha das entregas, o que o histórico mostra ao cliente | `[09:34] Marcos` |
 | Tempo de resposta por webhook | média e máximo de `durationMs` em `webhook_deliveries`, por `webhookId` e período | tempo de resposta dos endpoints, inclusive os que chegam ao timeout HTTP de 10 s | `[09:34] Marcos` |
 | Entradas na DLQ sem reprocessamento | contagem de `webhook_dead_letter` com `replayedAt` nulo, separando as com `attempts` igual a zero (FDD-OBS-05) | volume na DLQ e entradas que aguardam um ADMIN | `[09:18] Diego` |
@@ -966,7 +966,7 @@ router.post(
 - **FDD-DEP-07**: cada instância de `PrismaClient` tem o próprio pool, e o worker soma um segundo pool ao da API ([ADR-002-CONS-15](adrs/ADR-002-worker-separado-com-polling.md)). Na 5.22.0, o tamanho padrão é núcleos físicos × 2 + 1 conexões por instância, e ele vale aqui porque a `DATABASE_URL` do `.env.example` não define `connection_limit` (código do motor de consultas do Prisma na versão 5.22.0, `quaint/src/pooled.rs`, https://raw.githubusercontent.com/prisma/prisma-engines/5.22.0/quaint/src/pooled.rs). O `max_connections` padrão do MySQL 8.0 é 151 (MySQL 8.0 Reference Manual, "Server System Variables", https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html), e o `docker-compose.yml` não o altera. **Hipótese:** em produção, a soma dos dois pools fica abaixo do `max_connections`; falta o número de núcleos físicos das máquinas da API e do worker e a configuração do MySQL de produção, que não estão no repositório. Confirmar com a plataforma junto com a questão 5 do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md).
 - **FDD-DEP-08**: exclusão de cliente com webhook. **Proposta (a validar):** nenhuma mudança nesta fase. A relação obrigatória de `WebhookEndpoint` com `Customer`, sem `onDelete` (FDD-DADOS-06), recebe a ação padrão `Restrict` (Prisma, "Referential actions", https://www.prisma.io/docs/orm/prisma-schema/data-model/relations/referential-actions), como a FK de `orders` para `customers`, que a migração inicial grava com `ON DELETE RESTRICT` (`prisma/migrations/20260519182739_init/migration.sql`). `DELETE /api/v1/customers/:id` passa a falhar para cliente com webhook, inclusive removido logicamente, como já falha para cliente com pedido. O MySQL recusa com o erro 1451, que o Prisma 5.22.0 converte em `P2003` (código do motor na versão 5.22.0, `quaint/src/connector/mysql/error.rs` e `libs/user-facing-errors/src/query_engine/mod.rs`, https://github.com/prisma/prisma-engines/tree/5.22.0), e `src/middlewares/error.middleware.ts`, que trata só `P2002` e `P2025`, responde `500` (`src/modules/customers/customer.service.ts`). Lacuna, sem questão aberta no RFC; risco no FDD-RISCO-12.
 - **FDD-DEP-09**: **Proposta (a validar):** os parâmetros do worker e do módulo (Apêndice) são constantes em `src/modules/webhooks/webhook.config.ts` (novo), sem variável de ambiente nova nesta fase; torná-los variáveis exige mudar o `envSchema` de `src/config/env.ts`. Lacuna, sem questão aberta no RFC.
-- **FDD-DEP-10**: compatibilidade: nenhuma rota ou resposta existente muda. `PATCH /api/v1/orders/:id/status` mantém o contrato e ganha, dentro da transação, a leitura dos webhooks do cliente e a gravação na outbox ([ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md), [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) (`[09:40] Bruno`). A migração nova não altera tabelas existentes; o modelo `Customer` ganha só o campo de relação (FDD-DADOS-06).
+- **FDD-DEP-10**: compatibilidade: nenhuma rota existente muda, e as respostas existentes mudam num caso só: **Proposta (a validar):** sem mudança na exclusão de cliente nesta fase, `DELETE /api/v1/customers/:id` de cliente com webhook, inclusive removido, passa a responder `500` (FDD-DEP-08; lacuna, sem questão aberta no RFC). `PATCH /api/v1/orders/:id/status` mantém o contrato e ganha, dentro da transação, a leitura dos webhooks do cliente e a gravação na outbox ([ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md), [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) (`[09:40] Bruno`). A migração nova não altera tabelas existentes; o modelo `Customer` ganha só o campo de relação (FDD-DADOS-06).
 
 ## 11. Integração com o sistema existente
 
@@ -982,7 +982,7 @@ router.post(
 | FDD-INT-08 | `src/middlewares/request-logger.middleware.ts` | log `http_request` com `requestId`, `path` e `userId` | sem alteração; serve à correlação com o pedido (FDD-OBS-08) | `src/middlewares/request-logger.middleware.ts` |
 | FDD-INT-09 | `src/shared/logger/index.ts` | `logger` Pino com `redactPaths` sem `secret` e `base.service` fixo | **Proposta (a validar):** `redactPaths` ganha `secret`, `previousSecret`, `*.secret` e `*.previousSecret` (FDD-OBS-03, questão 3 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)); o worker usa `logger.child` (FDD-OBS-02, lacuna, sem questão aberta no RFC) | `[09:22] Diego`, `src/shared/logger/index.ts` |
 | FDD-INT-10 | `src/server.ts` | entry-point única da API, com `bootstrap`, `SIGINT`, `SIGTERM` e `bootstrap_failed` | sem alteração; modelo de `src/worker.ts` (novo) ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)) | `[09:11] Larissa`, `src/server.ts` |
-| FDD-INT-11 | `src/app.ts` | `buildControllers` monta repository, service e controller de cada módulo | **Proposta (a validar):** monta também os do módulo de webhooks e devolve a chave `webhooks` (lacuna, sem questão aberta no RFC) ([ADR-006](adrs/ADR-006-reuso-dos-padroes-do-projeto.md)) | `[09:27] Bruno`, `src/app.ts` |
+| FDD-INT-11 | `src/app.ts` | `buildControllers` monta repository, service e controller de cada módulo (o de auth reaproveita o repository de usuários) | **Proposta (a validar):** monta também os do módulo de webhooks e devolve a chave `webhooks` (lacuna, sem questão aberta no RFC) ([ADR-006](adrs/ADR-006-reuso-dos-padroes-do-projeto.md)) | `[09:27] Bruno`, `src/app.ts` |
 | FDD-INT-12 | `src/routes/index.ts` | monta `/auth`, `/users`, `/customers`, `/products` e `/orders`; não há `/admin` | **Proposta (a validar):** monta `/webhooks` e `/admin/webhooks` com o router do módulo e ganha a chave `webhooks` em `Controllers` (lacuna, sem questão aberta no RFC) ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md), [ADR-006](adrs/ADR-006-reuso-dos-padroes-do-projeto.md)) | `[09:35] Diego`, `src/routes/index.ts` |
 | FDD-INT-13 | `src/config/database.ts` | exporta o `prisma` criado na carga do módulo | sem alteração; na proposta do FDD-FLUXO-03 (passo 2; lacuna, sem questão aberta no RFC), o worker importa o mesmo módulo e ganha uma instância própria no seu processo ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)) | `[09:30] Bruno`, `src/config/database.ts` |
 | FDD-INT-14 | `src/config/env.ts` | `envSchema` com `DATABASE_URL` e `JWT_SECRET` obrigatórios | sem alteração; o worker exige as mesmas variáveis (FDD-DEP-06), e, na proposta do FDD-DEP-09 (lacuna, sem questão aberta no RFC), os parâmetros não viram variáveis nesta fase | `src/config/env.ts` |
@@ -1012,9 +1012,9 @@ Arquivos novos (**Proposta (a validar):** nomes pelo padrão dos módulos, `[09:
 - **FDD-CA-01**: depois de `PATCH /api/v1/orders/:id/status` para um status que um webhook ativo do cliente quer, existe linha em `webhook_outbox` em estado da outbox pendente; **Proposta (a validar):** uma linha por webhook interessado, com `attempts` zero e o mesmo `eventId` nas linhas (questão 2 do [ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)); teste de integração com consulta ao banco (seção 5.1, FDD-FLUXO-01) (`[09:40] Bruno`).
 - **FDD-CA-02**: quando a gravação na outbox falha dentro do `changeStatus` (falha forçada com `vi.mock` do módulo `src/modules/webhooks/webhook.publisher.ts` (novo), fazendo `publishWebhookEvent` lançar erro), a resposta é de erro, o pedido mantém o status antigo e nenhuma linha existe na outbox; confirma a hipótese do FDD-FLUXO-01, passo 8 ([ADR-001-CONS-05](adrs/ADR-001-outbox-transacional-no-mysql.md)) (`[09:40] Bruno`).
 - **FDD-CA-03**: mudança para um status que nenhum webhook do cliente quer não grava nada na outbox (`[09:34] Bruno`); **Proposta (a validar):** com uma linha por webhook interessado (seção 5.1, passo 7), webhook cuja lista `statuses` não contém o status de destino não ganha linha, e webhook com `active` falso ou `deletedAt` preenchido também não (questão 3 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)); teste de integração (seção 5.1, passos 3, 4 e 7).
-- **FDD-CA-04**: no caminho feliz, o primeiro envio acontece até 2 s depois da gravação da linha, mais o tempo do envio: o `createdAt` do primeiro registro em `webhook_deliveries` menos o `createdAt` da linha é no máximo 2 s mais `durationMs`, mais o `durationMs` do ciclo vazio anterior registrado em `webhook_cycle_completed`, porque, na proposta de ciclos sem sobreposição (FDD-PARAM-01), o intervalo conta a partir do fim do ciclo; teste com o worker em loop contra servidor local que responde `200` (seção 5.2) (`[09:10] Larissa`). O critério não promete a meta de 10 s para eventos com retry ([RFC-QA-07](RFC.md#questões-em-aberto)).
+- **FDD-CA-04**: no caminho feliz, o primeiro envio acontece até 2 s depois da gravação da linha, mais o tempo do envio: o `createdAt` do primeiro registro em `webhook_deliveries` menos o `createdAt` da linha é no máximo 2 s mais `durationMs`, mais o `durationMs` do ciclo vazio anterior registrado em `webhook_cycle_completed`, porque, na proposta de ciclos sem sobreposição (FDD-PARAM-01; lacuna, sem questão aberta no RFC), o intervalo conta a partir do fim do ciclo; teste com o worker em loop contra servidor local que responde `200` (seção 5.2) (`[09:10] Larissa`). O critério não promete a meta de 10 s para eventos com retry ([RFC-QA-07](RFC.md#questões-em-aberto)).
 - **FDD-CA-05**: endpoint que não responde em 10 s gera envio falho; **Proposta (a validar):** com `lastError` iniciado por `WEBHOOK_DELIVERY_TIMEOUT` (lacuna, sem questão aberta no RFC), estado da outbox falhou (questão 3 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) e `nextAttemptAt` igual ao fim do envio mais 1 min (cálculo a partir do fim do envio, seção 5.3); teste com servidor local que não responde (seções 5.2 e 5.3, FDD-ERRO-09) (`[09:42] Diego`).
-- **FDD-CA-06**: o momento do próximo envio segue a tabela da seção 5.3 para os envios 1 a 5 e, **Proposta (a validar):** com 6 envios por linha ([RFC-QA-08](RFC.md#questões-em-aberto)), a falha do envio 6 leva à DLQ; teste da função de cálculo do próximo envio e do ciclo com `nextAttemptAt` ajustado no banco (FDD-FLUXO-04) (`[09:17] Larissa`).
+- **FDD-CA-06**: os intervalos entre os envios são os da progressão da seção 5.3. **Proposta (a validar):** contados do fim do envio e com 6 envios por linha ([RFC-QA-08](RFC.md#questões-em-aberto)), os envios 1 a 5 marcam o próximo envio pela tabela da seção 5.3, e a falha do envio 6 leva à DLQ; teste da função de cálculo do próximo envio e do ciclo com `nextAttemptAt` ajustado no banco (FDD-FLUXO-04) (`[09:17] Larissa`).
 - **FDD-CA-07**: esgotados os envios, existe uma entrada em `webhook_dead_letter` com o `eventId`, o payload, `attempts` e o motivo, e a linha não está mais em `webhook_outbox` (**Proposta (a validar):**, questão 3 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)); consulta ao banco após o último envio falho (seção 5.4, FDD-FLUXO-05) (`[09:18] Diego`).
 - **FDD-CA-08**: o servidor local valida o `X-Signature` recebido com a secret do endpoint pela função `isValidSignature` do FDD-CONTRATO-08; **Proposta (a validar):** depois de uma rotação, dentro das 24 h, o header traz dois valores e a função aceita o request com a secret nova e com a anterior ([RFC-QA-09](RFC.md#questões-em-aberto)) (seções 5.5 e 6.2) (`[09:22] Sofia`).
 - **FDD-CA-09**: o `X-Event-Id` é igual ao `event_id` do corpo e não muda entre os envios de uma linha, que levam corpo idêntico; teste com dois envios da mesma linha (seção 6.2, FDD-RES-10) (`[09:25] Diego`).
@@ -1042,10 +1042,10 @@ Com o envio de uma linha de cada vez (**Proposta (a validar):**, [RFC-QA-06](RFC
 **Impacto**: alto para os outros clientes do mesmo ciclo.
 
 **Mitigação**:
-- lote pequeno e configurável (FDD-PARAM-03);
-- métricas de tempo de resposta e de idade da linha elegível mais antiga (FDD-OBS-06).
+- **Proposta (a validar):** lote pequeno e configurável (FDD-PARAM-03; lacuna, sem questão aberta no RFC);
+- **Proposta (a validar):** métricas de tempo de resposta e de idade da linha elegível mais antiga (FDD-OBS-06; lacuna, sem questão aberta no RFC).
 
-**Plano de contingência**: reduzir o lote em `src/modules/webhooks/webhook.config.ts` (novo) e levar à [RFC-QA-06](RFC.md#questões-em-aberto) o envio de várias linhas ao mesmo tempo.
+**Plano de contingência**: **Proposta (a validar):** reduzir o lote em `src/modules/webhooks/webhook.config.ts` (novo) (FDD-DEP-09; lacuna, sem questão aberta no RFC) e levar à [RFC-QA-06](RFC.md#questões-em-aberto) o envio de várias linhas ao mesmo tempo.
 
 ### FDD-RISCO-02: Linha presa em processando
 
@@ -1071,13 +1071,13 @@ O worker único é premissa sem garantia: deploy com sobreposição ou execuçã
 
 **Mitigação**:
 - **Proposta (a validar):** `SELECT ... FOR UPDATE SKIP LOCKED` evita que dois workers leiam a mesma linha (FDD-FLUXO-03, passo 5; questão 4 do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md));
-- log `webhook_worker_started` a cada início, para ver instâncias sobrepostas (FDD-OBS-01).
+- **Proposta (a validar):** log `webhook_worker_started` a cada início, para ver instâncias sobrepostas (FDD-OBS-01; lacuna, sem questão aberta no RFC).
 
 **Plano de contingência**: parar a instância extra; as duplicatas têm o mesmo `X-Event-Id`.
 
 ### FDD-RISCO-04: Worker parado sem ninguém perceber
 
-Sem servidor HTTP, o worker não tem health check, e a API continua gravando linhas ([ADR-002-CONS-13](adrs/ADR-002-worker-separado-com-polling.md)) (`[09:10] Larissa`).
+Sem servidor HTTP, o worker não tem health check, e a API continua gravando linhas ([ADR-002-CONS-13](adrs/ADR-002-worker-separado-com-polling.md)) (`src/app.ts`, onde fica o único `GET /health`).
 
 **Probabilidade**: média.
 
@@ -1102,7 +1102,7 @@ A secret pode vazar por log, por acesso ao banco ou do lado do cliente, como já
 - formato de armazenamento dependente da questão 4 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md);
 - revisão de segurança de pelo menos 2 dias úteis antes do deploy (`[09:46] Sofia`).
 
-**Plano de contingência**: rotação pelo FDD-CONTRATO-05; a secret anterior ainda vale por 24 h (`[09:21] Sofia`).
+**Plano de contingência**: rotação pelo FDD-CONTRATO-05; a secret anterior ainda vale por 24 h (`[09:21] Sofia`), se a forma da assinatura nesse período permitir verificar com as duas ([RFC-QA-09](RFC.md#questões-em-aberto)). O efeito para o cliente está no [PRD-RISCO-03](PRD.md#riscos-e-mitigação).
 
 ### FDD-RISCO-06: Crescimento sem retenção
 
@@ -1113,15 +1113,15 @@ Outbox, histórico e DLQ crescem sem política de retenção ([RFC-RISCO-03](RFC
 **Impacto**: médio: consultas do worker e do histórico mais lentas e mais espaço em disco.
 
 **Mitigação**:
-- índices em `status`, `createdAt` e `webhookId` (FDD-DADOS-06);
-- histórico limitado aos últimos 100 envios na leitura (FDD-CONTRATO-06);
-- métrica de linhas por estado da outbox (FDD-OBS-06).
+- índices em `status` e `createdAt` (`[09:08] Diego`) e, **Proposta (a validar):**, em `webhookId` (FDD-DADOS-06; lacuna, sem questão aberta no RFC);
+- histórico limitado aos últimos 100 envios na leitura (`[09:34] Marcos`; FDD-CONTRATO-06);
+- **Proposta (a validar):** métrica de linhas por estado da outbox (FDD-OBS-06; lacuna, sem questão aberta no RFC).
 
 **Plano de contingência**: definir o arquivamento numa fase futura, com prazo decidido pelo time.
 
 ### FDD-RISCO-07: Cliente que não deduplica
 
-O cliente que ignora o `X-Event-Id` processa duas vezes o mesmo evento ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) (`[09:25] Diego`).
+Risco de produto do [PRD-RISCO-02](PRD.md#riscos-e-mitigação), que traz o efeito e a contingência para o cliente; aqui fica a parte técnica. O cliente que ignora o `X-Event-Id` processa duas vezes o mesmo evento ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)) (`[09:25] Diego`).
 
 **Probabilidade**: média.
 
@@ -1129,9 +1129,10 @@ O cliente que ignora o `X-Event-Id` processa duas vezes o mesmo evento ([ADR-005
 
 **Mitigação**:
 - documentação com destaque no portal (`[09:26] Marcos`);
-- `X-Event-Id` estável entre envios e, na proposta do FDD-CA-14, no reprocessamento ([RFC-QA-11](RFC.md#questões-em-aberto)).
+- `X-Event-Id` estável entre envios e, na proposta do FDD-CA-14, no reprocessamento ([RFC-QA-11](RFC.md#questões-em-aberto));
+- janela de deduplicação do cliente em aberto (questão 3 do [ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)).
 
-**Plano de contingência**: mostrar ao cliente os envios repetidos pelo histórico de entregas do webhook (FDD-CONTRATO-06).
+**Plano de contingência**: consultar `webhook_deliveries` pelo `eventId` para levantar os envios repetidos (FDD-CONTRATO-06); a comunicação com o cliente segue o PRD-RISCO-02.
 
 ### FDD-RISCO-08: Perda de ordem por pedido no retry e no reprocessamento
 
@@ -1139,7 +1140,7 @@ Retry, reprocessamento e linha devolvida entregam eventos de um pedido fora de o
 
 **Probabilidade**: média, sempre que um envio falha.
 
-**Impacto**: médio: um cliente que aplica o evento sem conferir a ordem volta o pedido a um status antigo.
+**Impacto**: médio; o efeito para o cliente está no [PRD-RISCO-05](PRD.md#riscos-e-mitigação).
 
 **Mitigação**:
 - **Proposta (a validar):** `timestamp` do payload com milissegundos para o cliente ordenar (seção 6.2, [RFC-QA-05](RFC.md#questões-em-aberto));
@@ -1157,7 +1158,7 @@ Retry, reprocessamento e linha devolvida entregam eventos de um pedido fora de o
 
 **Mitigação**:
 - log de auditoria com o usuário (FDD-OBS-04);
-- recusa do segundo reprocessamento da mesma entrada (FDD-ERRO-07);
+- **Proposta (a validar):** recusa do segundo reprocessamento da mesma entrada (FDD-ERRO-07, [RFC-QA-11](RFC.md#questões-em-aberto));
 - **Proposta (a validar):** inclusão do risco na revisão de segurança, primeira opção da questão 6 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md).
 
 **Plano de contingência**: fechar o registro de ADMIN no módulo de autenticação, fora do escopo desta feature.
@@ -1171,24 +1172,23 @@ Retry, reprocessamento e linha devolvida entregam eventos de um pedido fora de o
 **Impacto**: médio: o cliente não recebe a mudança.
 
 **Mitigação**:
-- consulta das entradas sem reprocessamento com `attempts` igual a zero (FDD-OBS-06).
+- **Proposta (a validar):** consulta das entradas sem reprocessamento com `attempts` igual a zero (FDD-OBS-06; questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 
-**Plano de contingência**: corrigir a causa do tamanho; o reprocessamento da entrada é recusado (FDD-ERRO-08), e o cliente busca o estado em `GET /api/v1/orders/:id`.
+**Plano de contingência**: corrigir a causa do tamanho; na proposta do FDD-FLUXO-06 (passo 6), o reprocessamento da entrada é recusado (FDD-ERRO-08, questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)), e o cliente busca o estado em `GET /api/v1/orders/:id`.
 
 ### FDD-RISCO-11: Transação do changeStatus mais longa
 
-A transação do `changeStatus` ganha a leitura dos webhooks do cliente e a gravação na outbox ([ADR-001-CONS-04](adrs/ADR-001-outbox-transacional-no-mysql.md), [ADR-007-CONS-05](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) (`[09:40] Bruno`).
+A transação do `changeStatus` ganha a leitura dos webhooks do cliente e a gravação na outbox ([ADR-001-CONS-04](adrs/ADR-001-outbox-transacional-no-mysql.md), [ADR-007-CONS-05](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) (`[09:40] Bruno`). O volume de mudanças de status que dimensiona essa carga não foi estimado (questão 3 do [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)).
 
 **Probabilidade**: alta: a leitura dos webhooks acontece em toda mudança de status pelo `changeStatus`; a gravação, só com webhook interessado.
 
 **Impacto**: baixo a médio: transação mais demorada e uma nova causa de rollback.
 
 **Mitigação**:
-- índice em `customerId` na configuração (FDD-DADOS-01);
-- uma leitura e uma gravação em lote por mudança (FDD-FLUXO-01);
-- nenhuma chamada HTTP e nenhum log dentro da transação (FDD-OBS-05).
+- **Proposta (a validar):** índice em `customerId` na configuração (FDD-DADOS-01, [ADR-007-CONS-11](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) e uma leitura e uma gravação em lote por mudança (FDD-FLUXO-01; lacuna, sem questão aberta no RFC);
+- nenhuma chamada HTTP dentro da transação ([ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)); **Proposta (a validar):** nenhum log dentro dela (FDD-OBS-05; lacuna, sem questão aberta no RFC).
 
-**Plano de contingência**: comparar o `durationMs` do log `http_request` de `PATCH /api/v1/orders/:id/status` antes e depois da feature.
+**Plano de contingência**: se o `durationMs` do log `http_request` de `PATCH /api/v1/orders/:id/status` piorar depois da feature, levar o volume medido à questão 3 do [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md) e rever os índices e a leitura dos webhooks.
 
 ### FDD-RISCO-12: Exclusão de cliente com webhook responde 500
 
@@ -1212,7 +1212,7 @@ O `fetch` global aparece como experimental na documentação da v20 (Node.js v20
 **Impacto**: médio: uma mudança de comportamento numa atualização do Node quebraria o envio.
 
 **Mitigação**:
-- versão do Node fixada no ambiente e testes do worker com servidor local (seção 12).
+- **Proposta (a validar):** testes do worker com servidor local (seção 12), que mostram uma mudança de comportamento do `fetch` antes do deploy; lacuna, sem questão aberta no RFC.
 
 **Plano de contingência**: trocar pelo módulo nativo `node:https`, sem dependência nova.
 
@@ -1230,7 +1230,7 @@ O `fetch` global aparece como experimental na documentação da v20 (Node.js v20
 | FDD-PARAM-06 | Teto de envios por linha | 6 | **Proposta (a validar):** "5 tentativas" lido como envio inicial mais 5 retentativas, [RFC-QA-08](RFC.md#questões-em-aberto) | FDD-FLUXO-04, FDD-FLUXO-05 | `[09:17] Larissa` |
 | FDD-PARAM-07 | Intervalos do backoff | 1 min, 5 min, 30 min, 2 h, 12 h | decidido | FDD-FLUXO-04 | `[09:17] Larissa` |
 | FDD-PARAM-08 | Limite do payload | 64 KB (64 × 1024 bytes do JSON serializado) | decidido (o limite); **Proposta (a validar):** a medida em bytes e o destino do evento, questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md) | FDD-FLUXO-02 | `[09:24] Larissa` |
-| FDD-PARAM-09 | Convivência da secret anterior | 24 h | decidido | FDD-FLUXO-07 | `[09:22] Sofia` |
+| FDD-PARAM-09 | Convivência da secret anterior | 24 h | decidido; **Proposta (a validar):** uma nova rotação dentro das 24 h encurta a convivência da secret mais antiga (questão 6 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)) | FDD-FLUXO-07 | `[09:22] Sofia` |
 | FDD-PARAM-10 | Tamanho da secret | 32 bytes (64 caracteres hexadecimais) | **Proposta (a validar):** lacuna, sem questão aberta no RFC | FDD-FLUXO-07, passo 2 | `package.json` |
 | FDD-PARAM-11 | Envios no histórico | 100 | decidido | FDD-CONTRATO-06 | `[09:34] Marcos` |
 | FDD-PARAM-12 | Corpo da resposta guardado | 4 KB | **Proposta (a validar):** lacuna, sem questão aberta no RFC | FDD-DADOS-03 | `[09:34] Marcos` |

@@ -62,13 +62,13 @@ Caminho do endpoint, cálculo do momento do próximo envio e tabela da DLQ estã
 - **ADR-003-CONS-01**: A janela cobre indisponibilidades de horas, como a de 2 h já vista, e foi aceita pelo produto (`[09:17] Marcos`).
 - **ADR-003-CONS-02**: Nenhum evento fica sendo reenviado para sempre.
 - **ADR-003-CONS-03**: A outbox tem leitura mais limpa e a DLQ guarda evidência para depuração e reprocessamento.
-- **ADR-003-CONS-04**: Um evento na DLQ volta à entrega sem intervenção direta no banco, pelo reprocessamento, com registro de quem o fez.
+- **ADR-003-CONS-04**: Um evento na DLQ volta à entrega sem intervenção direta no banco, pelo reprocessamento, com registro de quem o fez. Exceção em aberto: evento acima de 64 KB guardado na DLQ, que voltaria à outbox acima do limite (questão 2 do [ADR-007](ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 
 ### Negativas
 
 #### Contagem e janela
 
-- **ADR-003-CONS-05**: **Derivada:** "5 tentativas" e "cinco intervalos com quase 15 h" só fecham juntos com 6 envios. Com 5 envios no total, só os quatro primeiros intervalos são usados e a janela cai para 156 min, cerca de 2,6 h (1 + 5 + 30 + 120 min). Com envio inicial mais 5 retentativas, são 6 envios e 876 min, cerca de 14,6 h (1 + 5 + 30 + 120 + 720 min). Ver questão 1.
+- **ADR-003-CONS-05**: **Derivada:** "5 tentativas" e "cinco intervalos com quase 15 h" só fecham juntos com 6 envios. Com 5 envios no total, só os quatro primeiros intervalos são usados e a janela cai para 156 min, cerca de 2,6 h (1 + 5 + 30 + 120 min). Com envio inicial mais 5 retentativas, são 6 envios e 876 min, cerca de 14,6 h (1 + 5 + 30 + 120 + 720 min). A janela também delimita por quanto tempo o cliente guarda os identificadores para deduplicar ([ADR-005-CONS-10](ADR-005-entrega-at-least-once-com-x-event-id.md)). Ver questão 1.
 - **ADR-003-CONS-06**: Um cliente fora do ar por mais tempo que a janela perde a entrega automática: o evento vai para a DLQ e só volta por reprocessamento de um ADMIN. O produto aceitou esse limite para a janela de quase 15 h (`[09:17] Marcos`); se a resposta da questão 1 for 5 envios no total, a janela cai para cerca de 2,6 h, valor que não foi aceito.
 
 #### Semântica da falha
@@ -79,7 +79,7 @@ Caminho do endpoint, cálculo do momento do próximo envio e tabela da DLQ estã
 #### Ordem e conteúdo reentregue
 
 - **ADR-003-CONS-10**: **Derivada:** o retry reordena eventos do mesmo pedido mesmo com um único worker: enquanto um evento espera o próximo intervalo, um evento posterior do mesmo pedido pode ser entregue antes. O cenário e a questão estão no [ADR-002](ADR-002-worker-separado-com-polling.md) (CONS-07, questão 1).
-- **ADR-003-CONS-14**: **Derivada:** o reprocessamento entrega o snapshot gravado na inserção ([ADR-007](ADR-007-payload-snapshot-e-filtro-na-insercao.md)), que pode ser bem mais antigo que eventos do mesmo pedido já entregues. Um cliente que aplica o evento sem conferir a ordem pode voltar o pedido a um status do pedido antigo. Se o reprocessamento mantém o identificador do evento está em aberto no [ADR-005](ADR-005-entrega-at-least-once-com-x-event-id.md) (questão 1). Ver questão 5.
+- **ADR-003-CONS-14**: **Derivada:** o reprocessamento entrega o snapshot gravado na inserção ([ADR-007](ADR-007-payload-snapshot-e-filtro-na-insercao.md)), que pode ser bem mais antigo que eventos do mesmo pedido já entregues. Um cliente que aplica o evento sem conferir a ordem pode voltar o pedido a um status do pedido antigo. Se o reprocessamento mantém o identificador do evento está em aberto no [ADR-005](ADR-005-entrega-at-least-once-com-x-event-id.md) (questão 1). A perda de ordem que isso causa está no [ADR-002-CONS-16](ADR-002-worker-separado-com-polling.md). Ver questão 5.
 
 #### Operação do retry e da DLQ
 
@@ -116,7 +116,7 @@ Caminho do endpoint, cálculo do momento do próximo envio e tabela da DLQ estã
 - ADR-003-ALT-01: `[09:15] Diego` (descarte do retry indefinido).
 - ADR-003-ALT-02: `[09:16] Bruno` (propõe 3, "mais agressivo"), `[09:16] Diego` (descarte), `[09:16] Larissa` (fica com cinco).
 - ADR-003-ALT-03: `[09:17] Larissa` (levanta "failed" na outbox), `[09:18] Diego` (descarte), `[09:18] Bruno` (apoia a tabela separada).
-- Consequências: CONS-01 `[09:16] Diego`, `[09:17] Diego` e `[09:17] Marcos`; CONS-02 `[09:15] Diego`; CONS-03 e CONS-04 `[09:18] Diego` e `[09:36] Sofia`; CONS-05 `[09:17] Diego` e `[09:17] Larissa`; CONS-06 `[09:17] Marcos` e `[09:36] Larissa`; CONS-07 `[09:08] Diego` e `[09:18] Diego`; CONS-08 `src/modules/auth/auth.routes.ts` e `src/modules/auth/auth.schemas.ts`; CONS-10 `[09:17] Larissa` (backoff), com o ADR-002-CONS-07; CONS-11 `[09:42] Diego`; CONS-12 `[09:37] Larissa` (e-mail fora desta fase) e `package.json` (sem biblioteca de métricas); CONS-13 `[09:42] Diego`; CONS-14 `[09:18] Diego` ("Recoloca na outbox como pendente"), com o snapshot do ADR-007; CONS-15 `[09:18] Diego` (DLQ com o payload); CONS-16 `[09:17] Larissa` (backoff com intervalos crescentes); CONS-09 `[09:18] Diego`.
+- Consequências: CONS-01 `[09:16] Diego`, `[09:17] Diego` e `[09:17] Marcos`; CONS-02 `[09:15] Diego`; CONS-03 e CONS-04 `[09:18] Diego` e `[09:36] Sofia` (CONS-04 com a questão 2 do ADR-007 e `[09:24] Larissa`, limite de 64 KB); CONS-05 `[09:17] Diego` e `[09:17] Larissa`, com o ADR-005-CONS-10; CONS-06 `[09:17] Marcos` e `[09:36] Larissa`; CONS-07 `[09:08] Diego` e `[09:18] Diego`; CONS-08 `src/modules/auth/auth.routes.ts` e `src/modules/auth/auth.schemas.ts`; CONS-10 `[09:17] Larissa` (backoff), com o ADR-002-CONS-07; CONS-11 `[09:42] Diego`; CONS-12 `[09:37] Larissa` (e-mail fora desta fase) e `package.json` (sem biblioteca de métricas); CONS-13 `[09:42] Diego`; CONS-14 `[09:18] Diego` ("Recoloca na outbox como pendente"), com o snapshot do ADR-007 e o ADR-002-CONS-16; CONS-15 `[09:18] Diego` (DLQ com o payload); CONS-16 `[09:17] Larissa` (backoff com intervalos crescentes); CONS-09 `[09:18] Diego`.
 - Código:
   - `src/middlewares/auth.middleware.ts`: `requireRole`, controle de papéis existente.
   - `src/modules/auth/auth.routes.ts`: `buildAuthRouter`, registro sem autenticação.
@@ -131,7 +131,7 @@ Caminho do endpoint, cálculo do momento do próximo envio e tabela da DLQ estã
    - 5 envios no total: usa os quatro primeiros intervalos e a janela fica em 156 min, cerca de 2,6 h, abaixo das quase 15 h aceitas pelo produto;
    - envio inicial mais 5 retentativas: usa os cinco intervalos e a janela fica em 876 min, cerca de 14,6 h.
 
-   Afeta o núcleo da decisão. A resposta muda o atraso máximo da opção (b) da questão 1 do [ADR-002](ADR-002-worker-separado-com-polling.md). Responde: arquitetura (Larissa), com aceite de produto (Marcos) sobre a janela. Origem: CONS-05.
+   Afeta o núcleo da decisão. A resposta muda o atraso máximo da opção (b) da questão 1 do [ADR-002](ADR-002-worker-separado-com-polling.md) e a janela de retenção da questão 3 do [ADR-005](ADR-005-entrega-at-least-once-com-x-event-id.md). Responde: arquitetura (Larissa), com aceite de produto (Marcos) sobre a janela. Origem: CONS-05.
 2. **Quais respostas do cliente contam como falha que deve ser repetida?** Opções:
    - toda resposta fora da faixa 2xx e todo timeout são repetidos até o teto;
    - parte das respostas 4xx vai direto para a DLQ, sem repetir. Exige listar quais códigos (FDD, seção 5.3).

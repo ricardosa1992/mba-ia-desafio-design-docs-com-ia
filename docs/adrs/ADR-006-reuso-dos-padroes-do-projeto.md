@@ -105,7 +105,7 @@ Pasta e arquivos do módulo, registro das rotas, tipo de id das tabelas novas e 
   - `src/modules/users/user.service.ts`: `EMAIL_ALREADY_USED`, código sem prefixo;
   - `src/server.ts`: um dos três arquivos que usam o logger;
   - `package.json`: `pino-http` declarado.
-- ADRs relacionados: [ADR-001](ADR-001-outbox-transacional-no-mysql.md) (outbox na transação de pedidos), [ADR-002](ADR-002-worker-separado-com-polling.md) (worker), [ADR-003](ADR-003-retry-com-backoff-e-dlq.md) (reprocessamento com papel ADMIN), [ADR-004](ADR-004-assinatura-hmac-sha256-por-endpoint.md) (secret gerada pela plataforma e redaction).
+- ADRs relacionados: [ADR-001](ADR-001-outbox-transacional-no-mysql.md) (outbox na transação de pedidos), [ADR-002](ADR-002-worker-separado-com-polling.md) (worker), [ADR-003](ADR-003-retry-com-backoff-e-dlq.md) (reprocessamento com papel ADMIN), [ADR-004](ADR-004-assinatura-hmac-sha256-por-endpoint.md) (secret gerada pela plataforma e redaction), [ADR-005](ADR-005-entrega-at-least-once-com-x-event-id.md) (evento sem chamada HTTP, questão 2).
 - Documentos: [FDD](../FDD.md), seções 4, 7, 9 e 11.
 
 ## Questões em aberto
@@ -118,7 +118,7 @@ Pasta e arquivos do módulo, registro das rotas, tipo de id das tabelas novas e 
    Afeta o núcleo da decisão. Responder junto com a questão 2. Responde: arquitetura (Larissa) com engenharia de Pedidos (Bruno). Origem: CONS-04.
 2. **O código `WEBHOOK_SECRET_REQUIRED` deve existir?** Opções:
    - descartar o código, já que a secret é gerada pela plataforma;
-   - manter o código para outro caso, a definir na matriz de erros (FDD, seção 7).
+   - manter o código para outro caso, a definir na matriz de erros (FDD, seção 7). Se o caso for o webhook sem secret utilizável no momento de assinar, o evento pode esgotar os envios sem nenhuma chamada HTTP e fica fora do at-least-once ([ADR-005-CONS-12](ADR-005-entrega-at-least-once-com-x-event-id.md)).
 
    Afeta detalhes, não o que foi decidido. Responder junto com a questão 1. Responde: arquitetura (Larissa) com engenharia de Pedidos (Bruno). Origem: CONS-12.
 

@@ -173,12 +173,12 @@ O usuário autenticado remove um webhook (`[09:33] Bruno`).
 
 #### PRD-FR-05: Escolher os status do pedido que o webhook recebe
 
-Cada webhook escolhe os status do pedido que quer receber (`[09:33] Marcos`) e só recebe notificação desses status (`[09:34] Bruno`).
+Cada webhook escolhe os status do pedido que quer receber (`[09:33] Marcos`) e só recebe notificação desses status (`[09:33] Bruno`).
 
 **Fluxo principal**
 
 1. No cadastro ou na edição, o usuário informa a lista de status do pedido que o webhook quer receber (`[09:33] Marcos`).
-2. Uma mudança de status gera notificação só para os webhooks do cliente que escolheram o novo status (`[09:34] Bruno`).
+2. Uma mudança de status gera notificação só para os webhooks do cliente que escolheram o novo status (`[09:33] Bruno`).
 3. Uma mudança para um status que nenhum webhook do cliente escolheu não gera notificação (`[09:34] Bruno`).
 
 **Fluxos alternativos e exceções**
@@ -194,26 +194,26 @@ Cada webhook escolhe os status do pedido que quer receber (`[09:33] Marcos`) e s
 
 #### PRD-FR-06: Notificar a mudança de status do pedido
 
-A cada mudança de status de um pedido, a plataforma notifica o cliente (`[09:00] Marcos`), nos webhooks dele que escolheram o novo status (`[09:34] Bruno`), com os dados básicos do pedido e da mudança (`[09:43] Diego`).
+A cada mudança de status de um pedido, a plataforma notifica o cliente (`[09:00] Marcos`), nos webhooks dele que escolheram o novo status (`[09:33] Bruno`), com os dados básicos do pedido e da mudança (`[09:43] Diego`).
 
 **Fluxo principal**
 
 1. Um usuário muda o status de um pedido pela operação normal da API (`[09:40] Bruno`).
 2. A notificação fica registrada junto com a mudança: se a mudança é desfeita, a notificação some junto (`[09:06] Diego`).
 3. No caminho feliz, a leitura periódica atrasa o primeiro envio em até 2 s (`[09:10] Larissa`).
-4. A notificação leva o identificador da notificação, o tipo, o momento da mudança, o pedido, o número do pedido, o status anterior e o novo, o cliente e o valor total, sem os itens (`[09:43] Diego`).
+4. A notificação leva o identificador da notificação, o tipo, a data e hora do evento, o pedido, o número do pedido, o status anterior e o novo, o cliente e o valor total, sem os itens (`[09:43] Diego`). **Proposta (a validar):** essa data e hora é o momento da mudança ([RFC-QA-05](RFC.md#questões-em-aberto)).
 5. O cliente que quer mais detalhes consulta o pedido na API (`[09:43] Diego`).
 
 **Fluxos alternativos e exceções**
 
 - A notificação reflete o pedido no momento da mudança, mesmo que ele mude depois (`[09:52] Larissa`), e traz o identificador do webhook, para o cliente com vários webhooks saber qual cadastro a recebeu (`[09:44] Sofia`).
-- A mesma notificação pode chegar mais de uma vez, sempre com o mesmo identificador (`[09:25] Diego`).
-- Os clientes nunca pediram ordem global (`[09:14] Marcos`). A ordem por pedido não é garantida quando uma notificação precisa de reenvio nem no reprocessamento ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)). **Proposta (a validar):** o cliente ordena pelo momento da mudança, que vem no conteúdo da notificação ([RFC-QA-05](RFC.md#questões-em-aberto)).
+- A mesma notificação pode chegar mais de uma vez, com o mesmo identificador em todos os reenvios automáticos (`[09:25] Diego`); o descarte das repetidas está no PRD-RNF-19.
+- Os clientes nunca pediram ordem global (`[09:14] Marcos`), e a ordem por pedido não é garantida (PRD-RNF-21).
 - **Proposta (a validar):** mudança de status feita direto no banco, como carga inicial ou correção manual, não gera notificação, e a regra fica documentada para quem opera o banco (questão 2 do [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)) (`[09:40] Bruno`).
 
 **Erros previstos**
 
-- Notificação acima de 64 KB é erro (`[09:24] Larissa`). **Proposta (a validar):** a mudança de status do pedido não é desfeita; a notificação não é enviada e fica entre as entregas esgotadas com o motivo, sem reenvio automático, e o reprocessamento dela é recusado (questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md), [RFC-RISCO-06](RFC.md#riscos)).
+- Notificação acima de 64 KB é erro (`[09:24] Larissa`). **Proposta (a validar):** o que acontece com ela está no PRD-RNF-22 (questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
 - Envio que falha vai para o reenvio automático do PRD-FR-08 (`[09:42] Diego`).
 
 **Prioridade:** alta
@@ -285,13 +285,13 @@ A notificação que esgotou o reenvio automático fica guardada com o conteúdo,
 
 #### PRD-FR-10: Reprocessar manualmente uma entrega esgotada
 
-O administrador pede o reprocessamento de uma entrega esgotada (`[09:36] Larissa`), que volta a ser enviada como pendente (`[09:18] Diego`).
+O administrador pede o reprocessamento de uma entrega esgotada (`[09:36] Larissa`), que volta ao envio automático (`[09:18] Diego`).
 
 **Fluxo principal**
 
 1. Depois que o cliente se recupera, o administrador escolhe a entrega esgotada (`[09:18] Diego`).
 2. O sistema confere que o usuário tem papel de administrador (`[09:36] Larissa`).
-3. A notificação volta a ser enviada como pendente (`[09:18] Diego`).
+3. A notificação volta ao envio automático (`[09:18] Diego`).
 4. O sistema registra quem fez o reprocessamento, para auditoria (`[09:36] Sofia`).
 
 **Fluxos alternativos e exceções**
@@ -355,7 +355,7 @@ O cliente pede uma secret nova pela API (`[09:21] Sofia`), e a anterior continua
 ### Performance
 
 - **PRD-RNF-01**: notificação abaixo de 10 s depois da mudança de status (`[09:02] Marcos`). A meta só é atendida quando o primeiro envio dá certo ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)); se ela vale também para notificações que precisam de reenvio é pergunta de produto para Marcos ([RFC-QA-07](RFC.md#questões-em-aberto)).
-- **PRD-RNF-02**: a leitura periódica das notificações registradas causa um atraso de até 2 s no pior caso, aceito na reunião (`[09:10] Larissa`).
+- **PRD-RNF-02**: a leitura periódica das notificações registradas causa um atraso de até 2 s no pior caso, aceito na reunião (`[09:10] Larissa`). **Proposta (a validar):** com ciclos de leitura que não se sobrepõem, esse atraso pode somar a duração do ciclo anterior (PRD-CA-03); lacuna, sem questão aberta no RFC.
 - **PRD-RNF-03**: o sistema do cliente tem 10 s para responder a cada envio; depois disso o envio conta como falha e vai para reenvio (`[09:42] Diego`). Esse limite de 10 s não é a meta de notificação do PRD-RNF-01.
 
 ### Disponibilidade
@@ -385,15 +385,15 @@ A reunião não fixou percentual de disponibilidade da plataforma, e este PRD n�
 
 ### Confiabilidade e integridade de dados
 
-- **PRD-RNF-18**: toda mudança de status de um pedido que algum webhook do cliente quer receber gera a notificação (`[09:40] Bruno`), e nenhuma notificação sai de uma mudança desfeita (`[09:06] Diego`). **Proposta (a validar):** as exceções são a notificação acima de 64 KB (PRD-RNF-22) e a mudança feita direto no banco, que não gera notificação (questão 2 do [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)).
-- **PRD-RNF-19**: a entrega é feita pelo menos uma vez: a mesma notificação pode chegar mais de uma vez, e o cliente descarta as repetidas pelo identificador (`[09:25] Diego`), regra documentada com destaque no portal (`[09:26] Marcos`).
+- **PRD-RNF-18**: toda mudança de status de um pedido feita pela operação normal da API, que algum webhook do cliente quer receber, gera a notificação (`[09:40] Bruno`; [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)), e nenhuma notificação sai de uma mudança desfeita (`[09:06] Diego`). **Proposta (a validar):** as exceções são a notificação acima de 64 KB (PRD-RNF-22) e a mudança feita direto no banco, fora da operação normal da API, que não gera notificação; essa regra fica documentada para quem opera o banco (questão 2 do [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)).
+- **PRD-RNF-19**: a entrega é feita pelo menos uma vez: a mesma notificação pode chegar mais de uma vez, e o cliente descarta as repetidas pelo identificador (`[09:25] Diego`), regra documentada com destaque no portal (`[09:26] Marcos`). O identificador é o mesmo em todos os webhooks que recebem a notificação, então o cliente com vários webhooks descarta pelo identificador junto com o webhook que recebeu ([ADR-005-CONS-07](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)). Se o reprocessamento mantém o identificador está em aberto ([RFC-QA-11](RFC.md#questões-em-aberto)).
 - **PRD-RNF-20**: a notificação reflete o pedido no momento da mudança, mesmo que ele mude depois (`[09:52] Larissa`).
-- **PRD-RNF-21**: os clientes nunca pediram ordem global (`[09:14] Marcos`); a ordem por pedido não é garantida quando uma notificação precisa de reenvio nem no reprocessamento ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)). **Proposta (a validar):** o cliente ordena pelo momento da mudança, que vem no conteúdo da notificação ([RFC-QA-05](RFC.md#questões-em-aberto)).
+- **PRD-RNF-21**: os clientes nunca pediram ordem global (`[09:14] Marcos`); a ordem por pedido não é garantida: o reenvio, o reprocessamento e os demais casos do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md) podem inverter a ordem. **Proposta (a validar):** o cliente ordena pelo momento da mudança, que vem no conteúdo da notificação ([RFC-QA-05](RFC.md#questões-em-aberto)).
 - **PRD-RNF-22**: cada notificação tem limite de 64 KB, com erro acima disso (`[09:24] Larissa`). **Proposta (a validar):** a mudança de status do pedido não é desfeita; a notificação não é enviada e fica entre as entregas esgotadas com o motivo, sem reenvio automático, e o reprocessamento dela é recusado (questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md), [RFC-RISCO-06](RFC.md#riscos)).
 
 ### Compatibilidade
 
-- **PRD-RNF-23**: a feature só altera o comportamento existente dentro da mudança de status do pedido (`[09:40] Bruno`), que mantém o contrato atual, e os clientes que continuarem consultando a lista de pedidos não são afetados ([FDD-DEP-10](FDD.md#10-dependências-e-compatibilidade)). A exceção é a exclusão de cliente que tem webhook, que passa a ser recusada com erro genérico, como já acontece com cliente que tem pedido ([FDD-RISCO-12](FDD.md#13-riscos-e-mitigação)).
+- **PRD-RNF-23**: a feature só altera o comportamento existente dentro da mudança de status do pedido (`[09:40] Bruno`), que mantém o contrato atual, e os clientes que continuarem consultando a lista de pedidos não são afetados ([FDD-DEP-10](FDD.md#10-dependências-e-compatibilidade)). **Proposta (a validar):** sem mudança na exclusão de cliente nesta fase, a exclusão de cliente que tem ou já teve webhook passa a ser recusada com erro genérico, como já acontece com cliente que tem pedido ([FDD-RISCO-12](FDD.md#13-riscos-e-mitigação)); lacuna, sem questão aberta no RFC.
 
 ## Decisões e trade-offs
 
@@ -407,7 +407,7 @@ As decisões de arquitetura estão nos ADRs e no [RFC](RFC.md); aqui fica só o 
 ### PRD-DEC-02: Envio em processo separado com leitura a cada 2 s
 
 - **Justificativa:** um worker separado da API lê a outbox por polling a cada 2 s, o que atende a meta no caminho feliz e sobrevive ao reinício da API (`[09:10] Larissa`; [ADR-002](adrs/ADR-002-worker-separado-com-polling.md)).
-- **Trade-off:** atraso de até 2 s e ordem por pedido não garantida no reenvio ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md), [RFC-QA-05](RFC.md#questões-em-aberto)).
+- **Trade-off:** atraso de até 2 s e ordem por pedido não garantida, no reenvio e nos demais casos do ADR ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md), [RFC-QA-05](RFC.md#questões-em-aberto)).
 
 ### PRD-DEC-03: Reenvio com intervalos crescentes e entregas esgotadas guardadas à parte
 
@@ -450,7 +450,7 @@ Marcos confirma o prazo com a Atlas (`[09:47] Marcos`) e atualiza os clientes (`
 
 ### PRD-DEP-04: Organizacional: Respostas de produto às questões em aberto
 
-As questões [RFC-QA-05](RFC.md#questões-em-aberto) (ordem no reenvio), [RFC-QA-07](RFC.md#questões-em-aberto) (alcance da meta de 10 s) e [RFC-QA-08](RFC.md#questões-em-aberto) (contagem dos envios), em que o RFC pede a resposta ou o aceite de Marcos, precisam de resposta antes de codar, na sessão de revisão do documento de design com Bruno e Diego (`[09:50] Larissa`).
+As questões [RFC-QA-05](RFC.md#questões-em-aberto) (ordem no reenvio), [RFC-QA-07](RFC.md#questões-em-aberto) (alcance da meta de 10 s) e [RFC-QA-08](RFC.md#questões-em-aberto) (contagem dos envios), em que o RFC pede a resposta ou o aceite de Marcos, precisam de resposta antes de codar. A sessão de revisão do documento de design antes de codar foi marcada só com Bruno e Diego (`[09:50] Larissa`). **Proposta (a validar):** Marcos responde nessa sessão, convidado, ou antes dela, como o RFC propõe para as lacunas; lacuna, sem questão aberta no RFC.
 
 ### PRD-DEP-05: Técnica: Usuários que representam o cliente
 
@@ -508,7 +508,7 @@ Já houve cliente que vazou a secret em log da própria aplicação (`[09:22] Di
 - **Proposta (a validar):** secret nunca em log da plataforma (questão 3 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md));
 - revisão de segurança antes da entrada em produção (`[09:46] Sofia`).
 
-**Plano de contingência**: o cliente rotaciona a secret, e a anterior ainda vale por 24 h enquanto ele migra (`[09:21] Sofia`).
+**Plano de contingência**: o cliente rotaciona a secret, e a anterior ainda vale por 24 h enquanto ele migra (`[09:21] Sofia`), desde que a forma da assinatura nesse período permita verificar com as duas secrets ([RFC-QA-09](RFC.md#questões-em-aberto)).
 
 ### PRD-RISCO-04: Cliente fora do ar por mais tempo que a janela de reenvio
 
@@ -519,7 +519,7 @@ Um cliente fora do ar por mais de quase 15 h esgota o reenvio automático, e as 
 **Impacto**: médio: as notificações chegam só depois da ação de um administrador.
 
 **Mitigação**:
-- reenvio automático por quase 15 h (`[09:17] Diego`);
+- reenvio automático por quase 15 h (`[09:17] Diego`), com a contagem em aberto ([RFC-QA-08](RFC.md#questões-em-aberto));
 - entregas esgotadas guardadas com o conteúdo e o motivo (`[09:18] Diego`);
 - **Proposta (a validar):** a operação acompanha quantas entregas esgotadas aguardam reprocessamento (questão 4 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)).
 
@@ -537,7 +537,7 @@ Os clientes nunca pediram ordem global (`[09:14] Marcos`). Com o reenvio em inte
 - **Proposta (a validar):** o cliente ordena pelo momento da mudança, que vem no conteúdo da notificação ([RFC-QA-05](RFC.md#questões-em-aberto));
 - documentação no portal de como integrar (`[09:40] Marcos`).
 
-**Plano de contingência**: se a [RFC-QA-05](RFC.md#questões-em-aberto) escolher segurar as notificações seguintes de um pedido enquanto uma está em reenvio, opção da questão 1 do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md), a ordem por pedido passa a valer no reenvio.
+**Plano de contingência**: se a [RFC-QA-05](RFC.md#questões-em-aberto) escolher segurar as notificações seguintes de um pedido enquanto uma está em reenvio, opção da questão 1 do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md), a inversão causada pelo reenvio deixa de ocorrer; a ordem por pedido ainda depende da [RFC-QA-06](RFC.md#questões-em-aberto) e dos demais casos do ADR-002.
 
 ### PRD-RISCO-06: Meta de 10 s não atendida quando o primeiro envio falha
 
@@ -559,15 +559,15 @@ Os riscos técnicos (envio parado, crescimento das tabelas, registro público qu
 
 Checklist objetivo que define se a feature está pronta. O detalhe técnico de cada verificação está na [seção 12 do FDD](FDD.md#12-critérios-de-aceite-técnicos).
 
-- **PRD-CA-01**: toda mudança de status que um webhook do cliente escolheu gera notificação (`[09:40] Bruno`), e a mudança desfeita não gera nenhuma (`[09:06] Diego`) ([FDD-CA-01](FDD.md#12-critérios-de-aceite-técnicos), [FDD-CA-02](FDD.md#12-critérios-de-aceite-técnicos)).
-- **PRD-CA-02**: webhook que não escolheu o novo status não recebe notificação (`[09:34] Bruno`) ([FDD-CA-03](FDD.md#12-critérios-de-aceite-técnicos)).
+- **PRD-CA-01**: toda mudança de status feita pela operação normal da API que um webhook do cliente escolheu gera notificação (`[09:40] Bruno`), e a mudança desfeita não gera nenhuma (`[09:06] Diego`) ([FDD-CA-01](FDD.md#12-critérios-de-aceite-técnicos), [FDD-CA-02](FDD.md#12-critérios-de-aceite-técnicos)).
+- **PRD-CA-02**: webhook que não escolheu o novo status não recebe notificação (`[09:33] Bruno`) ([FDD-CA-03](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-03**: no caminho feliz, o primeiro envio sai em até 2 s depois da mudança, mais o tempo do envio (`[09:10] Larissa`); **Proposta (a validar):** mais a duração do ciclo de leitura anterior, porque os ciclos não se sobrepõem (lacuna, sem questão aberta no RFC); o critério não promete a meta de 10 s para notificação que precisa de reenvio ([RFC-QA-07](RFC.md#questões-em-aberto)) ([FDD-CA-04](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-04**: cadastro com URL sem https é recusado (`[09:23] Sofia`) ([FDD-CA-11](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-05**: **Proposta (a validar):** lista de status vazia, com repetição ou com status inexistente é recusada (`[09:33] Marcos`); lacuna, sem questão aberta no RFC ([FDD-CA-12](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-06**: sistema do cliente que não responde em 10 s gera envio com falha e recebe reenvio (`[09:42] Diego`) ([FDD-CA-05](FDD.md#12-critérios-de-aceite-técnicos)).
-- **PRD-CA-07**: os reenvios seguem os intervalos de 1 min, 5 min, 30 min, 2 h e 12 h (`[09:17] Larissa`), e, esgotados os envios, a notificação fica entre as entregas esgotadas (`[09:18] Diego`). **Proposta (a validar):** o teto é o envio inicial mais 5 reenvios ([RFC-QA-08](RFC.md#questões-em-aberto)) ([FDD-CA-06](FDD.md#12-critérios-de-aceite-técnicos), [FDD-CA-07](FDD.md#12-critérios-de-aceite-técnicos)).
+- **PRD-CA-07**: os reenvios seguem a progressão de intervalos de 1 min, 5 min, 30 min, 2 h e 12 h (`[09:17] Larissa`), e, esgotados os envios, a notificação fica entre as entregas esgotadas (`[09:18] Diego`). **Proposta (a validar):** o teto é o envio inicial mais 5 reenvios, que usa os cinco intervalos; com 5 envios no total, o de 12 h não é usado ([RFC-QA-08](RFC.md#questões-em-aberto)) ([FDD-CA-06](FDD.md#12-critérios-de-aceite-técnicos), [FDD-CA-07](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-08**: o cliente verifica a assinatura com a secret do webhook (`[09:22] Sofia`). **Proposta (a validar):** nas 24 h depois de uma rotação, a verificação aceita a secret nova e a anterior ([RFC-QA-09](RFC.md#questões-em-aberto)) ([FDD-CA-08](FDD.md#12-critérios-de-aceite-técnicos)).
-- **PRD-CA-09**: o identificador da notificação é o mesmo em todos os envios dela (`[09:25] Diego`) ([FDD-CA-09](FDD.md#12-critérios-de-aceite-técnicos)).
+- **PRD-CA-09**: o identificador da notificação é o mesmo em todos os reenvios automáticos dela (`[09:25] Diego`); no reprocessamento, ver o PRD-CA-11 ([FDD-CA-09](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-10**: o reprocessamento é aceito só para administrador e registra o usuário que o fez (`[09:36] Larissa`, `[09:36] Sofia`) ([FDD-CA-13](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-11**: **Proposta (a validar):** o reprocessamento mantém o identificador e o conteúdo, e uma segunda tentativa sobre a mesma entrega é recusada ([RFC-QA-11](RFC.md#questões-em-aberto)) (`[09:18] Diego`) ([FDD-CA-14](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-12**: a secret aparece na resposta da criação (`[09:31] Marcos`). **Proposta (a validar):** e só nela e na da rotação (questão 5 do [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)) ([FDD-CA-15](FDD.md#12-critérios-de-aceite-técnicos)).
@@ -575,7 +575,7 @@ Checklist objetivo que define se a feature está pronta. O detalhe técnico de c
 - **PRD-CA-14**: o histórico de um webhook mostra no máximo os últimos 100 envios (`[09:34] Marcos`) ([FDD-CA-17](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-15**: notificação acima de 64 KB é erro (`[09:24] Larissa`). **Proposta (a validar):** ela não desfaz a mudança de status do pedido e fica entre as entregas esgotadas (questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)) ([FDD-CA-10](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-16**: a revisão de segurança está concluída antes da entrada em produção (`[09:46] Sofia`); sem critério técnico correspondente no FDD, porque é verificação manual (PRD-TESTE-06).
-- **PRD-CA-17**: a documentação para os clientes está publicada no portal do desenvolvedor (`[09:40] Marcos`); sem critério técnico correspondente no FDD.
+- **PRD-CA-17**: a documentação para os clientes está publicada no portal do desenvolvedor, com o modo de integrar (`[09:40] Marcos`) e o aviso com destaque de que a notificação pode chegar repetida e deve ser descartada pelo identificador (`[09:26] Marcos`); **Proposta (a validar):** também como verificar a assinatura (lacuna, sem questão aberta no RFC); sem critério técnico correspondente no FDD.
 
 ## Estratégia de testes e validação
 
@@ -593,4 +593,4 @@ Checklist objetivo que define se a feature está pronta. O detalhe técnico de c
 - **PRD-TESTE-07**: revisão do documento de design com Bruno e Diego antes de codar (`[09:50] Larissa`).
 - **PRD-TESTE-08**: **Proposta (a validar):** o Product Manager confere a documentação do portal antes de liberá-la aos clientes (`[09:40] Marcos`); lacuna, sem questão aberta no RFC.
 
-Nenhum teste de carga entra nesta fase: a única meta de desempenho é a do PRD-RNF-01.
+**Proposta (a validar):** nenhum teste de carga entra nesta fase, porque a única meta de desempenho é a do PRD-RNF-01; lacuna, sem questão aberta no RFC.

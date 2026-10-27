@@ -74,13 +74,13 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-RNF-15 | `docs/PRD.md` | Requisito Não Funcional | Cliente vê o histórico de entregas | TRANSCRICAO | [09:34] Marcos |
 | PRD-RNF-16 | `docs/PRD.md` | Requisito Não Funcional | Proposta: operação sabe quantas entregas esgotadas aguardam e se os envios pararam | TRANSCRICAO | [09:18] Diego |
 | PRD-RNF-17 | `docs/PRD.md` | Requisito Não Funcional | Registro de quem reprocessou disponível para auditoria | TRANSCRICAO | [09:36] Sofia |
-| PRD-RNF-18 | `docs/PRD.md` | Requisito Não Funcional | Toda mudança de status desejada gera notificação; mudança desfeita não gera; exceções propostas | TRANSCRICAO | [09:40] Bruno |
-| PRD-RNF-19 | `docs/PRD.md` | Requisito Não Funcional | Entrega pelo menos uma vez; cliente descarta repetidas pelo identificador | TRANSCRICAO | [09:25] Diego |
+| PRD-RNF-18 | `docs/PRD.md` | Requisito Não Funcional | Mudança de status desejada feita pela operação normal da API gera notificação; mudança desfeita não gera; exceções propostas | TRANSCRICAO | [09:40] Bruno |
+| PRD-RNF-19 | `docs/PRD.md` | Requisito Não Funcional | Entrega pelo menos uma vez; cliente descarta repetidas pelo identificador (com vários webhooks, junto com o webhook) | TRANSCRICAO | [09:25] Diego |
 | PRD-RNF-20 | `docs/PRD.md` | Requisito Não Funcional | Notificação reflete o pedido no momento da mudança | TRANSCRICAO | [09:52] Larissa |
-| PRD-RNF-21 | `docs/PRD.md` | Requisito Não Funcional | Sem ordem global; ordem por pedido não garantida no reenvio nem no reprocessamento (RFC-QA-05) | TRANSCRICAO | [09:14] Marcos |
+| PRD-RNF-21 | `docs/PRD.md` | Requisito Não Funcional | Sem ordem global; ordem por pedido não garantida: reenvio, reprocessamento e demais casos do ADR-002 (RFC-QA-05) | TRANSCRICAO | [09:14] Marcos |
 | PRD-RNF-22 | `docs/PRD.md` | Requisito Não Funcional | Limite de 64 KB com erro; destino da notificação acima do limite é proposta | TRANSCRICAO | [09:24] Larissa |
-| PRD-RNF-23 | `docs/PRD.md` | Requisito Não Funcional | Só a mudança de status do pedido muda por dentro, com o contrato mantido; exclusão de cliente com webhook passa a ser recusada | TRANSCRICAO | [09:40] Bruno |
-| PRD-RNF-23b | `docs/PRD.md` | Requisito Não Funcional | Exclusão de cliente com webhook recusada como a de cliente com pedido (chave estrangeira com `ON DELETE RESTRICT`) | CODIGO | prisma/migrations/20260519182739_init/migration.sql |
+| PRD-RNF-23 | `docs/PRD.md` | Requisito Não Funcional | Só a mudança de status do pedido muda por dentro, com o contrato mantido; na proposta de não mudar a exclusão de cliente, a de cliente com webhook passa a ser recusada | TRANSCRICAO | [09:40] Bruno |
+| PRD-RNF-23b | `docs/PRD.md` | Requisito Não Funcional | Na proposta de não mudar a exclusão de cliente, a de cliente com webhook é recusada como a de cliente com pedido (chave estrangeira com `ON DELETE RESTRICT`) | CODIGO | prisma/migrations/20260519182739_init/migration.sql |
 | PRD-DEC-01 | `docs/PRD.md` | Decisão | Outbox no MySQL na transação da mudança de status, sem infra nova (ADR-001) | TRANSCRICAO | [09:08] Larissa |
 | PRD-DEC-02 | `docs/PRD.md` | Decisão | Worker separado com polling de 2 s (ADR-002) | TRANSCRICAO | [09:10] Larissa |
 | PRD-DEC-03 | `docs/PRD.md` | Decisão | Retry com backoff, DLQ separada e reprocessamento por administrador (ADR-003) | TRANSCRICAO | [09:17] Larissa |
@@ -91,7 +91,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-DEP-01 | `docs/PRD.md` | Dependência | Revisão de segurança de pelo menos 2 dias úteis, incluída no prazo | TRANSCRICAO | [09:46] Sofia |
 | PRD-DEP-02 | `docs/PRD.md` | Dependência | Documentação no portal: como integrar e aviso de repetição | TRANSCRICAO | [09:40] Marcos |
 | PRD-DEP-03 | `docs/PRD.md` | Dependência | Marcos confirma o prazo com a Atlas e atualiza os clientes | TRANSCRICAO | [09:47] Marcos |
-| PRD-DEP-04 | `docs/PRD.md` | Dependência | Respostas de produto às RFC-QA-05, RFC-QA-07 e RFC-QA-08 antes de codar | TRANSCRICAO | [09:50] Larissa |
+| PRD-DEP-04 | `docs/PRD.md` | Dependência | Respostas de Marcos às RFC-QA-05, RFC-QA-07 e RFC-QA-08 antes de codar; sessão de revisão marcada só com Bruno e Diego | TRANSCRICAO | [09:50] Larissa |
 | PRD-DEP-05 | `docs/PRD.md` | Dependência | Hipótese: usuários que representam o cliente são usuários comuns, sem vínculo com cliente | TRANSCRICAO | [09:32] Marcos |
 | PRD-DEP-06 | `docs/PRD.md` | Dependência | Painel visual do time de frontend, fora desta fase, dependeria do histórico | TRANSCRICAO | [09:40] Larissa |
 | PRD-RISCO-01 | `docs/PRD.md` | Risco | Atraso na entrega e churn da Atlas; blocos já somam 3 sprints antes da revisão | TRANSCRICAO | [09:00] Marcos |
@@ -100,15 +100,15 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-RISCO-04 | `docs/PRD.md` | Risco | Cliente fora do ar por mais que a janela de reenvio depende de reprocessamento manual | TRANSCRICAO | [09:17] Marcos |
 | PRD-RISCO-05 | `docs/PRD.md` | Risco | Consequência derivada: notificações de um pedido fora de ordem no reenvio e no reprocessamento | TRANSCRICAO | [09:17] Larissa |
 | PRD-RISCO-06 | `docs/PRD.md` | Risco | Meta de 10 s não atendida quando o primeiro envio falha | TRANSCRICAO | [09:02] Marcos |
-| PRD-CA-01 | `docs/PRD.md` | Critério de Aceitação | Mudança de status desejada gera notificação; mudança desfeita não gera | TRANSCRICAO | [09:40] Bruno |
-| PRD-CA-02 | `docs/PRD.md` | Critério de Aceitação | Webhook que não escolheu o status não recebe | TRANSCRICAO | [09:34] Bruno |
+| PRD-CA-01 | `docs/PRD.md` | Critério de Aceitação | Mudança de status desejada feita pela operação normal da API gera notificação; mudança desfeita não gera | TRANSCRICAO | [09:40] Bruno |
+| PRD-CA-02 | `docs/PRD.md` | Critério de Aceitação | Webhook que não escolheu o status não recebe | TRANSCRICAO | [09:33] Bruno |
 | PRD-CA-03 | `docs/PRD.md` | Critério de Aceitação | Primeiro envio até 2 s após a mudança no caminho feliz, sem prometer 10 s com reenvio | TRANSCRICAO | [09:10] Larissa |
 | PRD-CA-04 | `docs/PRD.md` | Critério de Aceitação | URL sem https recusada | TRANSCRICAO | [09:23] Sofia |
 | PRD-CA-05 | `docs/PRD.md` | Critério de Aceitação | Proposta: lista de status inválida recusada | TRANSCRICAO | [09:33] Marcos |
 | PRD-CA-06 | `docs/PRD.md` | Critério de Aceitação | Sem resposta em 10 s é falha e recebe reenvio | TRANSCRICAO | [09:42] Diego |
-| PRD-CA-07 | `docs/PRD.md` | Critério de Aceitação | Intervalos 1m/5m/30m/2h/12h e entregas esgotadas ao fim; teto proposto (RFC-QA-08) | TRANSCRICAO | [09:17] Larissa |
+| PRD-CA-07 | `docs/PRD.md` | Critério de Aceitação | Progressão de intervalos 1m/5m/30m/2h/12h e entregas esgotadas ao fim; teto proposto (RFC-QA-08) | TRANSCRICAO | [09:17] Larissa |
 | PRD-CA-08 | `docs/PRD.md` | Critério de Aceitação | Cliente verifica a assinatura com a secret; 24 h após rotação é proposta (RFC-QA-09) | TRANSCRICAO | [09:22] Sofia |
-| PRD-CA-09 | `docs/PRD.md` | Critério de Aceitação | Mesmo identificador da notificação em todos os envios | TRANSCRICAO | [09:25] Diego |
+| PRD-CA-09 | `docs/PRD.md` | Critério de Aceitação | Mesmo identificador da notificação em todos os reenvios automáticos | TRANSCRICAO | [09:25] Diego |
 | PRD-CA-10 | `docs/PRD.md` | Critério de Aceitação | Reprocessamento só por administrador, registrado com o usuário | TRANSCRICAO | [09:36] Sofia |
 | PRD-CA-11 | `docs/PRD.md` | Critério de Aceitação | Proposta: reprocessamento mantém identificador; segunda tentativa recusada (RFC-QA-11) | TRANSCRICAO | [09:18] Diego |
 | PRD-CA-12 | `docs/PRD.md` | Critério de Aceitação | Secret na resposta da criação; só nela e na rotação é proposta | TRANSCRICAO | [09:31] Marcos |
@@ -116,7 +116,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-CA-14 | `docs/PRD.md` | Critério de Aceitação | Histórico com no máximo os últimos 100 envios | TRANSCRICAO | [09:34] Marcos |
 | PRD-CA-15 | `docs/PRD.md` | Critério de Aceitação | 64 KB é erro; não desfazer a mudança de status é proposta | TRANSCRICAO | [09:24] Larissa |
 | PRD-CA-16 | `docs/PRD.md` | Critério de Aceitação | Revisão de segurança concluída antes da entrada em produção | TRANSCRICAO | [09:46] Sofia |
-| PRD-CA-17 | `docs/PRD.md` | Critério de Aceitação | Documentação publicada no portal do desenvolvedor | TRANSCRICAO | [09:40] Marcos |
+| PRD-CA-17 | `docs/PRD.md` | Critério de Aceitação | Documentação publicada no portal: modo de integrar e aviso de notificação repetida | TRANSCRICAO | [09:40] Marcos |
 | PRD-TESTE-01 | `docs/PRD.md` | Estratégia de Teste | Testes de integração com vitest e supertest contra o MySQL real, no padrão do repositório | CODIGO | tests/orders.test.ts |
 | PRD-TESTE-02 | `docs/PRD.md` | Estratégia de Teste | Falha forçada no registro da notificação desfaz a mudança de status | TRANSCRICAO | [09:40] Bruno |
 | PRD-TESTE-03 | `docs/PRD.md` | Estratégia de Teste | Verificação da assinatura com a secret do webhook | TRANSCRICAO | [09:22] Sofia |
@@ -193,7 +193,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | ADR-002-CONS-12 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: meta de 10 s só atendida no caminho feliz | TRANSCRICAO | [09:17] Larissa |
 | ADR-002-CONS-13 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: worker parado não é percebido; sem health check nem métricas | CODIGO | src/app.ts |
 | ADR-002-CONS-14 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: desligamento no modelo atual deixa linha presa em processando | CODIGO | src/server.ts |
-| ADR-002-CONS-15 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: custo contínuo no MySQL e pool de conexões próprio por instância | CODIGO | src/config/database.ts |
+| ADR-002-CONS-15 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: custo contínuo no MySQL e pool de conexões próprio por instância, com o tamanho padrão da 5.22.0 | CODIGO | src/config/database.ts |
 | ADR-002-CONS-16 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: reprocessamento da DLQ também entrega fora de ordem (ver ADR-003) | TRANSCRICAO | [09:18] Diego |
 | ADR-003 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Decisão | Retry com backoff 1m/5m/30m/2h/12h, teto com contagem em aberto, DLQ separada, reprocessamento ADMIN auditado | TRANSCRICAO | [09:17] Larissa |
 | ADR-003-ALT-01 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Alternativa Descartada | Retry indefinido | TRANSCRICAO | [09:15] Diego |
@@ -290,7 +290,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-ESC-13 | `docs/FDD.md` | Escopo | Excluído: permissões mais restritas no CRUD (RFC-QA-04) | TRANSCRICAO | [09:37] Sofia |
 | FDD-ESC-14 | `docs/FDD.md` | Escopo | Proposta: criação do pedido não gera evento nesta fase (questão 1 do ADR-001) | TRANSCRICAO | [09:40] Bruno |
 | FDD-ESC-15 | `docs/FDD.md` | Escopo | Proposta: mudanças de status fora do `changeStatus` (seed, SQL) não geram evento e a regra é documentada (questão 2 do ADR-001) | TRANSCRICAO | [09:40] Bruno |
-| FDD-DADOS-01 | `docs/FDD.md` | Modelo de Dados | Tabela `webhook_endpoints` com url, secret, cliente, estado ativo, dados de rotação, lista de status em `Json` e remoção lógica | TRANSCRICAO | [09:21] Bruno |
+| FDD-DADOS-01 | `docs/FDD.md` | Modelo de Dados | Tabela `webhook_endpoints` com url, secret, cliente, estado ativo, dados de rotação e lista de status em `Json`; proposta de remoção lógica | TRANSCRICAO | [09:21] Bruno |
 | FDD-DADOS-02 | `docs/FDD.md` | Modelo de Dados | Tabela `webhook_outbox` com UUID, `eventId`, snapshot, estado, índices em status e criação; proposta de uma linha por webhook, envios, próximo envio e entrada em processando | TRANSCRICAO | [09:08] Diego |
 | FDD-DADOS-03 | `docs/FDD.md` | Modelo de Dados | Proposta: tabela `webhook_deliveries`, uma linha por envio, com payload, status HTTP, corpo truncado, tempo e resultado | TRANSCRICAO | [09:34] Marcos |
 | FDD-DADOS-04 | `docs/FDD.md` | Modelo de Dados | Tabela `webhook_dead_letter` com payload, motivo e timestamp; proposta de `eventId`, envios e dados do reprocessamento | TRANSCRICAO | [09:18] Diego |
@@ -302,20 +302,20 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-FLUXO-04 | `docs/FDD.md` | Fluxo | Retry: tabela dos envios, proposta de 6 envios (876 min) e alternativa de 5 (156 min), cálculo do próximo envio, o que conta como falha | TRANSCRICAO | [09:17] Larissa |
 | FDD-FLUXO-05 | `docs/FDD.md` | Fluxo | Proposta: envios esgotados copiam a linha para a DLQ e a removem da outbox na mesma transação, com o motivo | TRANSCRICAO | [09:18] Diego |
 | FDD-FLUXO-06 | `docs/FDD.md` | Fluxo | Reprocessamento por ADMIN em `POST /api/v1/admin/webhooks/dead-letter/:id/replay`, com log de auditoria; proposta de mesmo `eventId` e recusa de segundo reprocessamento | TRANSCRICAO | [09:35] Diego |
-| FDD-FLUXO-07 | `docs/FDD.md` | Fluxo | Rotação: secret nova por `crypto.randomBytes`, anterior válida por 24 h, proposta de dois valores no `X-Signature` | TRANSCRICAO | [09:21] Sofia |
-| FDD-CONTRATO-01 | `docs/FDD.md` | Contrato | `POST /api/v1/webhooks`: cadastro com URL https, status e `customerId`; devolve a secret | TRANSCRICAO | [09:31] Marcos |
-| FDD-CONTRATO-02 | `docs/FDD.md` | Contrato | `GET /api/v1/webhooks?customerId=`: listagem paginada por cliente, sem secret | TRANSCRICAO | [09:33] Bruno |
-| FDD-CONTRATO-03 | `docs/FDD.md` | Contrato | `PATCH /api/v1/webhooks/:id`: edição parcial de URL, status e estado ativo | TRANSCRICAO | [09:33] Bruno |
-| FDD-CONTRATO-04 | `docs/FDD.md` | Contrato | `DELETE /api/v1/webhooks/:id`: proposta de remoção lógica, `204` | TRANSCRICAO | [09:33] Bruno |
+| FDD-FLUXO-07 | `docs/FDD.md` | Fluxo | Rotação: secret nova por `crypto.randomBytes`, anterior válida por 24 h, proposta de dois valores no `X-Signature` e de nova rotação dentro das 24 h (questão 6 do ADR-004) | TRANSCRICAO | [09:21] Sofia |
+| FDD-CONTRATO-01 | `docs/FDD.md` | Contrato | `POST /api/v1/webhooks` (caminho proposto): cadastro com URL https, status e `customerId` no body (proposta, RFC-QA-01); devolve a secret | TRANSCRICAO | [09:31] Marcos |
+| FDD-CONTRATO-02 | `docs/FDD.md` | Contrato | `GET /api/v1/webhooks?customerId=` (caminho e filtro propostos, RFC-QA-01): listagem paginada por cliente, sem secret | TRANSCRICAO | [09:33] Bruno |
+| FDD-CONTRATO-03 | `docs/FDD.md` | Contrato | `PATCH /api/v1/webhooks/:id` (caminho proposto): edição parcial de URL, status e estado ativo | TRANSCRICAO | [09:33] Bruno |
+| FDD-CONTRATO-04 | `docs/FDD.md` | Contrato | `DELETE /api/v1/webhooks/:id` (caminho proposto): proposta de remoção lógica, `204` | TRANSCRICAO | [09:33] Bruno |
 | FDD-CONTRATO-05 | `docs/FDD.md` | Contrato | Proposta: `POST /api/v1/webhooks/:id/secret/rotate` devolve a secret nova e a expiração da anterior | TRANSCRICAO | [09:21] Sofia |
-| FDD-CONTRATO-06 | `docs/FDD.md` | Contrato | `GET /api/v1/webhooks/:id/deliveries`: últimos 100 envios, sem paginação (proposta) | TRANSCRICAO | [09:34] Marcos |
+| FDD-CONTRATO-06 | `docs/FDD.md` | Contrato | `GET /api/v1/webhooks/:id/deliveries`: últimos 100 envios, sem paginação (proposta); histórico de webhook removido consultável (proposta) | TRANSCRICAO | [09:34] Marcos |
 | FDD-CONTRATO-07 | `docs/FDD.md` | Contrato | `POST /api/v1/admin/webhooks/dead-letter/:id/replay` com `requireRole('ADMIN')` | TRANSCRICAO | [09:36] Larissa |
 | FDD-CONTRATO-08 | `docs/FDD.md` | Contrato | Request de entrega: headers `Content-Type`, `X-Event-Id`, `X-Signature`, `X-Timestamp`, `X-Webhook-Id`, payload e verificação no cliente | TRANSCRICAO | [09:44] Diego |
 | FDD-CONTRATO-09 | `docs/FDD.md` | Contrato | `publishWebhookEvent(tx, order, fromStatus, toStatus)` com `Prisma.TransactionClient`, chamada no `changeStatus` | TRANSCRICAO | [09:41] Bruno |
 | FDD-ERRO-01 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_VALIDATION_ERROR` (400, `BadRequestError` pelo `validate` com código padrão) para erros de schema fora de `url` e `statuses` (RFC-QA-12) | TRANSCRICAO | [09:29] Larissa |
-| FDD-ERRO-02 | `docs/FDD.md` | Erro | `WEBHOOK_INVALID_URL` (400, `BadRequestError` pelo `validate` com código do campo `url`) para URL inválida ou sem https | TRANSCRICAO | [09:28] Bruno |
+| FDD-ERRO-02 | `docs/FDD.md` | Erro | `WEBHOOK_INVALID_URL` (400, `BadRequestError`) para URL inválida ou sem https; proposta: lançado pelo `validate` com código do campo `url` | TRANSCRICAO | [09:28] Bruno |
 | FDD-ERRO-03 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_INVALID_EVENT_FILTER` (400) para `statuses` vazio, repetido ou fora de `OrderStatus` | TRANSCRICAO | [09:33] Marcos |
-| FDD-ERRO-04 | `docs/FDD.md` | Erro | `WEBHOOK_NOT_FOUND` (404, subclasse de `AppError` em `webhook.errors.ts` (novo)) para webhook inexistente ou removido | TRANSCRICAO | [09:28] Bruno |
+| FDD-ERRO-04 | `docs/FDD.md` | Erro | `WEBHOOK_NOT_FOUND` (404) para webhook inexistente; proposta: subclasse de `AppError` em `webhook.errors.ts` (novo) e webhook removido também | TRANSCRICAO | [09:28] Bruno |
 | FDD-ERRO-05 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_CUSTOMER_NOT_FOUND` (404) para `customerId` sem cliente no cadastro | TRANSCRICAO | [09:32] Larissa |
 | FDD-ERRO-06 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_DEAD_LETTER_NOT_FOUND` (404) para entrada da DLQ inexistente no reprocessamento | TRANSCRICAO | [09:18] Diego |
 | FDD-ERRO-07 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_DEAD_LETTER_ALREADY_REPLAYED` (409, `ConflictError`) para entrada já reprocessada (RFC-QA-11) | TRANSCRICAO | [09:18] Diego |
@@ -323,7 +323,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-ERRO-09 | `docs/FDD.md` | Erro | Proposta: motivo gravado `WEBHOOK_DELIVERY_TIMEOUT` para envio sem resposta em 10 s, no formato `CÓDIGO: detalhe` | TRANSCRICAO | [09:42] Diego |
 | FDD-ERRO-10 | `docs/FDD.md` | Erro | Proposta: motivo gravado `WEBHOOK_DELIVERY_HTTP_ERROR` para resposta fora de 2xx | TRANSCRICAO | [09:42] Diego |
 | FDD-ERRO-11 | `docs/FDD.md` | Erro | Proposta: motivo gravado `WEBHOOK_DELIVERY_NETWORK_ERROR` para DNS, conexão recusada ou TLS | TRANSCRICAO | [09:42] Diego |
-| FDD-ERRO-12 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_SECRET_REQUIRED` como motivo gravado pelo worker sem secret utilizável; nunca resposta da API; alternativa de descartar (questão 2 do ADR-006) | TRANSCRICAO | [09:28] Bruno |
+| FDD-ERRO-12 | `docs/FDD.md` | Erro | Proposta: `WEBHOOK_SECRET_REQUIRED` como motivo gravado pelo worker sem secret utilizável, tentativa sem chamada HTTP; nunca resposta da API; alternativa de descartar (questão 2 do ADR-006) | TRANSCRICAO | [09:28] Bruno |
 | FDD-ERRO-13 | `docs/FDD.md` | Erro | Proposta: motivo `WEBHOOK_PAYLOAD_TOO_LARGE` gravado por `publishWebhookEvent` na DLQ, com `attempts` zero | TRANSCRICAO | [09:24] Larissa |
 | FDD-RES-01 | `docs/FDD.md` | Resiliência | Timeout HTTP de 10 s com `AbortSignal.timeout`, contado como falha; distinto da meta de 10 s | TRANSCRICAO | [09:42] Diego |
 | FDD-RES-02 | `docs/FDD.md` | Resiliência | Retry com backoff 1m/5m/30m/2h/12h; proposta de 6 envios (RFC-QA-08) e falha = fora de 2xx, rede ou timeout | TRANSCRICAO | [09:17] Larissa |
@@ -341,7 +341,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-OBS-01b | `docs/FDD.md` | Observabilidade | Campos de log em camelCase, como `requestId` do request logger | CODIGO | src/middlewares/request-logger.middleware.ts |
 | FDD-OBS-02 | `docs/FDD.md` | Observabilidade | Proposta: logs do worker por `logger.child({ component: 'webhook-worker' })`, sem alterar `base.service` | CODIGO | src/shared/logger/index.ts |
 | FDD-OBS-03 | `docs/FDD.md` | Observabilidade | Proposta: `secret`, `previousSecret` e os mesmos caminhos com `*.` no `redactPaths`; nenhum log do cadastro completo nem dos headers (questão 3 do ADR-004) | TRANSCRICAO | [09:22] Diego |
-| FDD-OBS-04 | `docs/FDD.md` | Observabilidade | Auditoria do reprocessamento com o usuário pelo log `webhook_dead_letter_replayed` | TRANSCRICAO | [09:36] Sofia |
+| FDD-OBS-04 | `docs/FDD.md` | Observabilidade | Auditoria do reprocessamento com o usuário; proposta: log `webhook_dead_letter_replayed` | TRANSCRICAO | [09:36] Sofia |
 | FDD-OBS-05 | `docs/FDD.md` | Observabilidade | Proposta: `publishWebhookEvent` não loga dentro da transação; entrada de 64 KB percebida pela consulta da DLQ | TRANSCRICAO | [09:40] Bruno |
 | FDD-OBS-06 | `docs/FDD.md` | Observabilidade | Proposta: métricas por consultas SQL às tabelas novas e contagens do log do ciclo, sem biblioteca de métricas | TRANSCRICAO | [09:34] Marcos |
 | FDD-OBS-07 | `docs/FDD.md` | Observabilidade | Proposta: biblioteca de métricas fora desta fase, proposta futura | TRANSCRICAO | [09:30] Larissa |
@@ -360,7 +360,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-DEP-07 | `docs/FDD.md` | Dependência | Segundo pool de conexões: tamanho padrão do pool do Prisma 5.22.0 e `max_connections` padrão do MySQL 8.0 verificados; hipótese de soma abaixo do limite em produção | CODIGO | .env.example |
 | FDD-DEP-08 | `docs/FDD.md` | Dependência | Proposta: sem mudança nesta fase; exclusão de cliente com webhook falha por `Restrict` com `P2003` e responde 500 | CODIGO | src/modules/customers/customer.service.ts |
 | FDD-DEP-09 | `docs/FDD.md` | Dependência | Proposta: parâmetros como constantes em `webhook.config.ts` (novo), sem variável de ambiente nova | CODIGO | src/config/env.ts |
-| FDD-DEP-10 | `docs/FDD.md` | Dependência | Compatibilidade: nenhuma rota existente muda; `PATCH /api/v1/orders/:id/status` ganha leitura e gravação na transação | TRANSCRICAO | [09:40] Bruno |
+| FDD-DEP-10 | `docs/FDD.md` | Dependência | Compatibilidade: nenhuma rota existente muda; `PATCH /api/v1/orders/:id/status` ganha leitura e gravação na transação; proposta: exclusão de cliente com webhook passa a falhar | TRANSCRICAO | [09:40] Bruno |
 | FDD-INT-01 | `docs/FDD.md` | Integração | `order.service.ts`: `changeStatus` chama `publishWebhookEvent` depois do histórico e antes da releitura | TRANSCRICAO | [09:40] Bruno |
 | FDD-INT-01b | `docs/FDD.md` | Integração | `order.service.ts`: ponto de chamada dentro do callback de `$transaction` | CODIGO | src/modules/orders/order.service.ts |
 | FDD-INT-02 | `docs/FDD.md` | Integração | `order.status.ts` sem alteração; define os `to_status` que geram evento | CODIGO | src/modules/orders/order.status.ts |
@@ -377,7 +377,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-INT-11 | `docs/FDD.md` | Integração | Proposta: `app.ts` monta repository, service e controller do módulo | TRANSCRICAO | [09:27] Bruno |
 | FDD-INT-11b | `docs/FDD.md` | Integração | `app.ts`: `buildControllers` como ponto de montagem | CODIGO | src/app.ts |
 | FDD-INT-12 | `docs/FDD.md` | Integração | Proposta: `routes/index.ts` monta `/webhooks` e `/admin/webhooks` | TRANSCRICAO | [09:35] Diego |
-| FDD-INT-13 | `docs/FDD.md` | Integração | `database.ts` sem alteração; worker importa o `prisma` e ganha instância própria no seu processo | TRANSCRICAO | [09:30] Bruno |
+| FDD-INT-13 | `docs/FDD.md` | Integração | `database.ts` sem alteração; proposta: worker importa o `prisma`, que ganha instância própria no seu processo | TRANSCRICAO | [09:30] Bruno |
 | FDD-INT-13b | `docs/FDD.md` | Integração | `database.ts`: `prisma` criado na carga do módulo | CODIGO | src/config/database.ts |
 | FDD-INT-14 | `docs/FDD.md` | Integração | `env.ts` sem alteração; worker exige as mesmas variáveis | CODIGO | src/config/env.ts |
 | FDD-INT-15 | `docs/FDD.md` | Integração | `schema.prisma` ganha o enum, os quatro modelos e o campo de relação em `Customer` | TRANSCRICAO | [09:08] Diego |
@@ -385,15 +385,15 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-INT-17 | `docs/FDD.md` | Integração | Proposta: `tests/setup.ts` apaga as tabelas novas antes de `customer` | CODIGO | tests/setup.ts |
 | FDD-INT-18 | `docs/FDD.md` | Integração | `tests/orders.test.ts` sem alteração; padrão dos testes novos | CODIGO | tests/orders.test.ts |
 | FDD-INT-19 | `docs/FDD.md` | Integração | Proposta: `factories.ts` ganha `createTestWebhook` gravando direto no banco | CODIGO | tests/helpers/factories.ts |
-| FDD-INT-20 | `docs/FDD.md` | Integração | `customer.service.ts` sem alteração nesta fase; exclusão de cliente com webhook responde 500 | CODIGO | src/modules/customers/customer.service.ts |
+| FDD-INT-20 | `docs/FDD.md` | Integração | Proposta: `customer.service.ts` sem alteração nesta fase; exclusão de cliente com webhook responde 500 | CODIGO | src/modules/customers/customer.service.ts |
 | FDD-INT-21 | `docs/FDD.md` | Integração | Proposta: `prisma/seed.ts` apaga as tabelas novas antes de `customer` | CODIGO | prisma/seed.ts |
 | FDD-CA-01 | `docs/FDD.md` | Critério de Aceitação | Mudança pelo `changeStatus` com webhook interessado grava linha pendente; proposta: uma por webhook, com o mesmo `eventId` | TRANSCRICAO | [09:40] Bruno |
 | FDD-CA-02 | `docs/FDD.md` | Critério de Aceitação | Falha na gravação da outbox mantém o status antigo e nenhuma linha; confirma a hipótese do rollback | TRANSCRICAO | [09:40] Bruno |
 | FDD-CA-03 | `docs/FDD.md` | Critério de Aceitação | Status que nenhum webhook do cliente quer não grava nada; proposta: sem linha para webhook que não quer, inativo ou removido | TRANSCRICAO | [09:34] Bruno |
 | FDD-CA-04 | `docs/FDD.md` | Critério de Aceitação | Primeiro envio até 2 s depois da gravação, mais o tempo do envio, no caminho feliz | TRANSCRICAO | [09:10] Larissa |
 | FDD-CA-05 | `docs/FDD.md` | Critério de Aceitação | Sem resposta em 10 s, o envio falha; proposta: motivo `WEBHOOK_DELIVERY_TIMEOUT`, estado falhou e próximo envio em 1 min | TRANSCRICAO | [09:42] Diego |
-| FDD-CA-06 | `docs/FDD.md` | Critério de Aceitação | Próximo envio pela tabela da seção 5.3; proposta: falha do envio 6 leva à DLQ | TRANSCRICAO | [09:17] Larissa |
-| FDD-CA-07 | `docs/FDD.md` | Critério de Aceitação | Envios esgotados: entrada na DLQ e linha fora da outbox | TRANSCRICAO | [09:18] Diego |
+| FDD-CA-06 | `docs/FDD.md` | Critério de Aceitação | Proposta: intervalos da seção 5.3 contados do fim do envio, com 6 envios e falha do envio 6 levando à DLQ | TRANSCRICAO | [09:17] Larissa |
+| FDD-CA-07 | `docs/FDD.md` | Critério de Aceitação | Envios esgotados: entrada na DLQ; proposta: linha fora da outbox | TRANSCRICAO | [09:18] Diego |
 | FDD-CA-08 | `docs/FDD.md` | Critério de Aceitação | `X-Signature` verificável com a secret do endpoint; proposta: dois valores nas 24 h após rotação | TRANSCRICAO | [09:22] Sofia |
 | FDD-CA-09 | `docs/FDD.md` | Critério de Aceitação | `X-Event-Id` igual ao `event_id` e estável entre envios da linha | TRANSCRICAO | [09:25] Diego |
 | FDD-CA-10 | `docs/FDD.md` | Critério de Aceitação | Proposta: payload acima de 64 KB não desfaz a mudança de status e vai para a DLQ com `attempts` zero | TRANSCRICAO | [09:24] Larissa |
@@ -409,10 +409,10 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-RISCO-01 | `docs/FDD.md` | Risco | Endpoint lento segura o ciclo com o envio de uma linha de cada vez | TRANSCRICAO | [09:42] Diego |
 | FDD-RISCO-02 | `docs/FDD.md` | Risco | Linha presa em processando após encerramento no meio do ciclo | CODIGO | src/server.ts |
 | FDD-RISCO-03 | `docs/FDD.md` | Risco | Dois workers rodando, premissa sem garantia (RFC-RISCO-04) | TRANSCRICAO | [09:12] Diego |
-| FDD-RISCO-04 | `docs/FDD.md` | Risco | Worker parado sem ninguém perceber | TRANSCRICAO | [09:10] Larissa |
+| FDD-RISCO-04 | `docs/FDD.md` | Risco | Worker parado sem ninguém perceber (sem health check no worker) | CODIGO | src/app.ts |
 | FDD-RISCO-05 | `docs/FDD.md` | Risco | Vazamento da secret por log, banco ou cliente | TRANSCRICAO | [09:22] Diego |
 | FDD-RISCO-06 | `docs/FDD.md` | Risco | Crescimento sem retenção de outbox, histórico e DLQ; arquivamento sem prazo | TRANSCRICAO | [09:08] Diego |
-| FDD-RISCO-07 | `docs/FDD.md` | Risco | Cliente que não deduplica pelo `X-Event-Id` | TRANSCRICAO | [09:25] Diego |
+| FDD-RISCO-07 | `docs/FDD.md` | Risco | Cliente que não deduplica pelo `X-Event-Id` (parte técnica; risco de produto no PRD-RISCO-02) | TRANSCRICAO | [09:25] Diego |
 | FDD-RISCO-08 | `docs/FDD.md` | Risco | Perda de ordem por pedido no retry e no reprocessamento (RFC-QA-05) | TRANSCRICAO | [09:12] Diego |
 | FDD-RISCO-09 | `docs/FDD.md` | Risco | Registro público que aceita ADMIN enfraquece `requireRole` no reprocessamento | CODIGO | src/modules/auth/auth.schemas.ts |
 | FDD-RISCO-10 | `docs/FDD.md` | Risco | Proposta: evento acima de 64 KB fora do at-least-once | TRANSCRICAO | [09:24] Larissa |

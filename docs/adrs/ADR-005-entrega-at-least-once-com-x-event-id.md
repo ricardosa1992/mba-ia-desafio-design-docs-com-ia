@@ -62,7 +62,7 @@ Geração do UUID, biblioteca usada e semântica do header no contrato de entreg
 
 #### Eventos sem envio
 
-- **ADR-005-CONS-12**: **Derivada:** a garantia vale para eventos gravados e mantidos na outbox. Se o [ADR-007](ADR-007-payload-snapshot-e-filtro-na-insercao.md) adotar a gravação direta na DLQ do evento acima de 64 KB, a falha permanente no envio por tamanho ou o descarte das linhas de webhook desativado ou removido, esses eventos terão zero envios e ficarão fora do at-least-once. Ver as questões 2 e 3 do ADR-007.
+- **ADR-005-CONS-12**: **Derivada:** a garantia vale para eventos gravados e mantidos na outbox. Se o [ADR-007](ADR-007-payload-snapshot-e-filtro-na-insercao.md) adotar a gravação direta na DLQ do evento acima de 64 KB, a falha permanente no envio por tamanho ou o descarte das linhas de webhook desativado ou removido, esses eventos terão zero envios e ficarão fora do at-least-once. O mesmo vale se a questão 2 do [ADR-006](ADR-006-reuso-dos-padroes-do-projeto.md) usar o código `WEBHOOK_SECRET_REQUIRED` para webhook sem secret utilizável no momento de assinar: o evento não é enviado sem assinatura e pode esgotar o teto sem nenhuma chamada HTTP. Ver as questões 2 e 3 do ADR-007.
 
 #### Origens de duplicata
 
@@ -83,7 +83,7 @@ Geração do UUID, biblioteca usada e semântica do header no contrato de entreg
 - Contexto e fatores: `[09:42] Diego` (timeout de 10 s conta como falha), `[09:25] Diego` (modelo de Stripe e GitHub; exactly-once exige coordenação), `[09:25] Bruno` (como o cliente diferencia).
 - ADR-005-ALT-01: `[09:25] Sofia` (objeção à responsabilidade do cliente), `[09:25] Diego` (descarte do exactly-once).
 - Consequências: CONS-01 `[09:25] Diego`; CONS-02 `[09:26] Larissa`; CONS-03 `[09:25] Diego`; CONS-04 `[09:24] Diego` e `[09:25] Sofia`; CONS-05 `[09:26] Marcos` (documentação no portal); CONS-06 `[09:18] Diego` (reprocessamento recoloca como pendente) e `[09:42] Diego`; CONS-07 `[09:25] Diego` (único por evento), `[09:34] Bruno` (filtro por webhook do cliente) e `[09:44] Sofia` (`X-Webhook-Id` para cliente com vários cadastros); CONS-08 `[09:25] Diego`; CONS-09 `[09:12] Diego` (worker único como premissa), com os cenários do ADR-002-CONS-10 e ADR-002-CONS-14; CONS-10 `[09:17] Diego` (janela do retry); CONS-11 `[09:22] Sofia` (assinatura sobre o corpo), `[09:43] Diego` (`event_id` no payload) e ADR-004-CONS-07; CONS-12 `[09:24] Larissa` (64 KB com erro), `[09:21] Sofia` (estado ativo do webhook) e as questões 2 e 3 do ADR-007.
-- ADRs relacionados: [ADR-002](ADR-002-worker-separado-com-polling.md) (workers sobrepostos e linha presa), [ADR-003](ADR-003-retry-com-backoff-e-dlq.md) (retry, janela e reprocessamento), [ADR-004](ADR-004-assinatura-hmac-sha256-por-endpoint.md) (corpo assinado e reenvio capturado), [ADR-007](ADR-007-payload-snapshot-e-filtro-na-insercao.md) (filtro por webhook na inserção).
+- ADRs relacionados: [ADR-002](ADR-002-worker-separado-com-polling.md) (workers sobrepostos e linha presa), [ADR-003](ADR-003-retry-com-backoff-e-dlq.md) (retry, janela e reprocessamento), [ADR-004](ADR-004-assinatura-hmac-sha256-por-endpoint.md) (corpo assinado e reenvio capturado), [ADR-006](ADR-006-reuso-dos-padroes-do-projeto.md) (uso do código `WEBHOOK_SECRET_REQUIRED`), [ADR-007](ADR-007-payload-snapshot-e-filtro-na-insercao.md) (filtro por webhook na inserção).
 - Documentos: [FDD](../FDD.md), seções 4, 5.1, 5.4, 6.2 e 10; [PRD](../PRD.md).
 
 ## Questões em aberto

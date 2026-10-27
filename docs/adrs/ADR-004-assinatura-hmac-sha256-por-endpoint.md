@@ -47,7 +47,7 @@ Formato do valor do header, geração da secret, endpoint de rotação e exemplo
 
 - **ADR-004-CONS-01**: O cliente consegue validar a origem do request e a integridade do corpo.
 - **ADR-004-CONS-02**: O vazamento de uma secret do endpoint afeta um endpoint, não todos.
-- **ADR-004-CONS-03**: A rotação responde ao caso real de vazamento em log, e a convivência de 24 h foi pensada para dar ao cliente tempo de migrar os sistemas dele. Esse tempo só existe na prática se a forma da assinatura durante a convivência permitir validar com as duas secrets (CONS-06, questão 1).
+- **ADR-004-CONS-03**: A rotação responde ao caso real de vazamento em log, e a convivência de 24 h foi pensada para dar ao cliente tempo de migrar os sistemas dele. Esse tempo só existe na prática se a forma da assinatura durante a convivência permitir validar com as duas secrets (CONS-06, questão 1). Uma segunda rotação dentro das 24 h também mexe nesse tempo, e o que acontece nela não foi definido (questão 6).
 
 ### Negativas
 
@@ -123,3 +123,9 @@ Formato do valor do header, geração da secret, endpoint de rotação e exemplo
    - também a listagem e a edição.
 
    Afeta detalhes, não o que foi decidido. Responde: segurança (Sofia) com produto (Marcos). Origem: CONS-11.
+6. **O que acontece com uma nova rotação pedida dentro das 24 h de convivência?** Opções:
+   - a secret mais antiga deixa de valer, e só duas secrets valem ao mesmo tempo. Encurta para essa secret a convivência de 24 h da Decisão;
+   - recusar a nova rotação até a secret anterior expirar. Exige um erro novo na API de rotação (FDD, seção 7) e impede trocar de novo uma secret que vazou logo depois da rotação;
+   - manter as três secrets válidas. Exige assinar com três valores durante a convivência, o que depende da questão 1.
+
+   Afeta detalhes, não o que foi decidido, salvo a primeira opção, que encurta a convivência. Depende da questão 1. Responde: segurança (Sofia). Origem: CONS-03.
