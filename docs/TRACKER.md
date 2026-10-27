@@ -7,6 +7,122 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 
 | ID | Documento | Tipo | Conteúdo (resumo) | Fonte | Localização |
 | --- | --- | --- | --- | --- | --- |
+| PRD-PROB-01 | `docs/PRD.md` | Problema | Clientes consultam a lista de pedidos de tempos em tempos; integração lenta e cara | TRANSCRICAO | [09:00] Marcos |
+| PRD-PROB-02 | `docs/PRD.md` | Problema | Pedido formal dos 3 clientes B2B pela notificação de mudança de status | TRANSCRICAO | [09:00] Marcos |
+| PRD-PROB-03 | `docs/PRD.md` | Problema | Atlas sugeriu migrar para concorrente se não sair até o fim do trimestre | TRANSCRICAO | [09:00] Marcos |
+| PRD-PROB-04 | `docs/PRD.md` | Problema | Data pedida pela Atlas: fim de novembro | TRANSCRICAO | [09:45] Marcos |
+| PRD-PUB-01 | `docs/PRD.md` | Público-alvo | Os 3 clientes B2B e os sistemas deles que recebem as notificações | TRANSCRICAO | [09:00] Marcos |
+| PRD-PUB-02 | `docs/PRD.md` | Público-alvo | Usuários que cadastram webhooks em nome do cliente pela API; serem usuários comuns é hipótese | TRANSCRICAO | [09:32] Marcos |
+| PRD-PUB-03 | `docs/PRD.md` | Público-alvo | Administradores que reprocessam entregas esgotadas | TRANSCRICAO | [09:36] Larissa |
+| PRD-PUB-04 | `docs/PRD.md` | Público-alvo | Desenvolvedores dos clientes que leem o portal do desenvolvedor | TRANSCRICAO | [09:40] Marcos |
+| PRD-PUB-05 | `docs/PRD.md` | Público-alvo | Cenário: cliente recebe a notificação e consulta o pedido na API para detalhes | TRANSCRICAO | [09:43] Diego |
+| PRD-PUB-06 | `docs/PRD.md` | Público-alvo | Cenário: cliente escolhe só os status que interessam | TRANSCRICAO | [09:33] Marcos |
+| PRD-PUB-07 | `docs/PRD.md` | Público-alvo | Cenário: cliente com vários webhooks sabe qual cadastro recebeu a notificação | TRANSCRICAO | [09:44] Sofia |
+| PRD-PUB-08 | `docs/PRD.md` | Público-alvo | Cenário: cliente confere no histórico o que foi enviado e o que respondeu | TRANSCRICAO | [09:34] Marcos |
+| PRD-PUB-09 | `docs/PRD.md` | Público-alvo | Cenário: cliente fora do ar por horas recebe depois pelo reenvio automático | TRANSCRICAO | [09:16] Diego |
+| PRD-PUB-10 | `docs/PRD.md` | Público-alvo | Cenário: administrador reprocessa entrega esgotada após o cliente se recuperar | TRANSCRICAO | [09:18] Diego |
+| PRD-PUB-11 | `docs/PRD.md` | Público-alvo | Cenário: cliente troca a secret após vazamento e tem 24 h para migrar | TRANSCRICAO | [09:21] Sofia |
+| PRD-PUB-12 | `docs/PRD.md` | Público-alvo | Cenário: cliente descarta notificação repetida pelo identificador | TRANSCRICAO | [09:25] Diego |
+| PRD-OBJ-01 | `docs/PRD.md` | Objetivo | Notificação abaixo de 10 s; só atendida quando o primeiro envio dá certo (RFC-QA-07) | TRANSCRICAO | [09:02] Marcos |
+| PRD-OBJ-02 | `docs/PRD.md` | Objetivo | Feature disponível em 3 sprints; Atlas pediu fim de novembro, a confirmar | TRANSCRICAO | [09:47] Larissa |
+| PRD-OBJ-03 | `docs/PRD.md` | Objetivo | Reenvio automático por quase 15 h antes de exigir ação manual; contagem em aberto (RFC-QA-08) | TRANSCRICAO | [09:17] Diego |
+| PRD-OBJ-04 | `docs/PRD.md` | Objetivo | Histórico com os últimos 100 envios por webhook | TRANSCRICAO | [09:34] Marcos |
+| PRD-OBJ-05 | `docs/PRD.md` | Objetivo | Toda notificação com assinatura verificável pelo cliente | TRANSCRICAO | [09:19] Sofia |
+| PRD-ESC-01 | `docs/PRD.md` | Escopo | Notificação de mudança de status do pedido, só de saída | TRANSCRICAO | [09:02] Marcos |
+| PRD-ESC-02 | `docs/PRD.md` | Escopo | Cadastro, listagem por cliente, edição e remoção de webhooks | TRANSCRICAO | [09:31] Marcos |
+| PRD-ESC-03 | `docs/PRD.md` | Escopo | Escolha dos status do pedido por webhook | TRANSCRICAO | [09:33] Marcos |
+| PRD-ESC-04 | `docs/PRD.md` | Escopo | Assinatura verificável com secret por webhook e rotação | TRANSCRICAO | [09:22] Sofia |
+| PRD-ESC-05 | `docs/PRD.md` | Escopo | Reenvio automático e guarda das entregas esgotadas | TRANSCRICAO | [09:17] Larissa |
+| PRD-ESC-06 | `docs/PRD.md` | Escopo | Reprocessamento manual por administrador | TRANSCRICAO | [09:36] Larissa |
+| PRD-ESC-07 | `docs/PRD.md` | Escopo | Histórico de entregas por webhook | TRANSCRICAO | [09:34] Marcos |
+| PRD-ESC-08 | `docs/PRD.md` | Escopo | Documentação no portal do desenvolvedor, com aviso de repetição | TRANSCRICAO | [09:40] Marcos |
+| PRD-FORA-01 | `docs/PRD.md` | Fora de escopo | Webhooks de entrada; clientes só querem receber | TRANSCRICAO | [09:02] Marcos |
+| PRD-FORA-02 | `docs/PRD.md` | Fora de escopo | Aviso por e-mail sobre falhas, adiado; não é caminho de entrega | TRANSCRICAO | [09:37] Larissa |
+| PRD-FORA-03 | `docs/PRD.md` | Fora de escopo | Painel visual para o cliente, projeto do time de frontend | TRANSCRICAO | [09:40] Larissa |
+| PRD-FORA-04 | `docs/PRD.md` | Fora de escopo | Limite de taxa de envios por cliente, em observação (RFC-QA-02) | TRANSCRICAO | [09:39] Larissa |
+| PRD-FORA-05 | `docs/PRD.md` | Fora de escopo | Arquivamento das notificações entregues, sem prazo | TRANSCRICAO | [09:08] Diego |
+| PRD-FORA-06 | `docs/PRD.md` | Fora de escopo | Ordem global entre pedidos e vários processos de envio em paralelo (RFC-QA-03) | TRANSCRICAO | [09:13] Diego |
+| PRD-FORA-07 | `docs/PRD.md` | Fora de escopo | Permissões mais restritas no cadastro de webhooks (RFC-QA-04) | TRANSCRICAO | [09:37] Sofia |
+| PRD-FORA-08 | `docs/PRD.md` | Fora de escopo | Proposta: criação do pedido não gera notificação nesta fase (questão 1 do ADR-001) | TRANSCRICAO | [09:40] Bruno |
+| PRD-FR-01 | `docs/PRD.md` | Requisito Funcional | Cadastrar webhook com URL https e lista de status; secret gerada e devolvida na criação | TRANSCRICAO | [09:31] Marcos |
+| PRD-FR-02 | `docs/PRD.md` | Requisito Funcional | Listar os webhooks de um cliente, sem a secret (proposta) | TRANSCRICAO | [09:33] Bruno |
+| PRD-FR-03 | `docs/PRD.md` | Requisito Funcional | Editar URL, lista de status e estado ativo, com as recusas do cadastro | TRANSCRICAO | [09:33] Bruno |
+| PRD-FR-04 | `docs/PRD.md` | Requisito Funcional | Remover webhook; efeito sobre notificações já registradas é proposta | TRANSCRICAO | [09:33] Bruno |
+| PRD-FR-05 | `docs/PRD.md` | Requisito Funcional | Cada webhook escolhe os status do pedido e só recebe esses | TRANSCRICAO | [09:33] Marcos |
+| PRD-FR-06 | `docs/PRD.md` | Requisito Funcional | Notificar a mudança de status com dados básicos do pedido, sem itens, refletindo o momento da mudança | TRANSCRICAO | [09:00] Marcos |
+| PRD-FR-07 | `docs/PRD.md` | Requisito Funcional | Assinar cada notificação com a secret do webhook para o cliente verificar origem e integridade | TRANSCRICAO | [09:19] Sofia |
+| PRD-FR-08 | `docs/PRD.md` | Requisito Funcional | Reenviar com intervalos 1m/5m/30m/2h/12h por quase 15 h; contagem em aberto | TRANSCRICAO | [09:17] Larissa |
+| PRD-FR-09 | `docs/PRD.md` | Requisito Funcional | Guardar entregas esgotadas com conteúdo, motivo e momento | TRANSCRICAO | [09:18] Diego |
+| PRD-FR-10 | `docs/PRD.md` | Requisito Funcional | Reprocessar entrega esgotada, só administrador, com registro de quem fez | TRANSCRICAO | [09:18] Diego |
+| PRD-FR-11 | `docs/PRD.md` | Requisito Funcional | Histórico com os últimos 100 envios, sucesso ou falha, conteúdo, resposta e tempo | TRANSCRICAO | [09:34] Marcos |
+| PRD-FR-12 | `docs/PRD.md` | Requisito Funcional | Rotacionar a secret pela API; anterior vale por 24 h | TRANSCRICAO | [09:21] Sofia |
+| PRD-RNF-01 | `docs/PRD.md` | Requisito Não Funcional | Notificação abaixo de 10 s, só atendida quando o primeiro envio dá certo (RFC-QA-07) | TRANSCRICAO | [09:02] Marcos |
+| PRD-RNF-02 | `docs/PRD.md` | Requisito Não Funcional | Atraso de até 2 s no pior caso causado pela leitura periódica | TRANSCRICAO | [09:10] Larissa |
+| PRD-RNF-03 | `docs/PRD.md` | Requisito Não Funcional | Cliente tem 10 s para responder; depois é falha e reenvio; não é a meta de 10 s | TRANSCRICAO | [09:42] Diego |
+| PRD-RNF-04 | `docs/PRD.md` | Requisito Não Funcional | Entrega não para quando a API reinicia; envio em processo separado | TRANSCRICAO | [09:11] Diego |
+| PRD-RNF-05 | `docs/PRD.md` | Requisito Não Funcional | Reenvio cobre indisponibilidades como a de 2 h, dentro da janela de quase 15 h | TRANSCRICAO | [09:16] Diego |
+| PRD-RNF-06 | `docs/PRD.md` | Requisito Não Funcional | URL do webhook só https | TRANSCRICAO | [09:23] Sofia |
+| PRD-RNF-07 | `docs/PRD.md` | Requisito Não Funcional | Toda notificação com assinatura verificável | TRANSCRICAO | [09:19] Sofia |
+| PRD-RNF-08 | `docs/PRD.md` | Requisito Não Funcional | Secret única por webhook | TRANSCRICAO | [09:21] Sofia |
+| PRD-RNF-09 | `docs/PRD.md` | Requisito Não Funcional | Secret rotacionável com 24 h de convivência | TRANSCRICAO | [09:21] Sofia |
+| PRD-RNF-10 | `docs/PRD.md` | Requisito Não Funcional | Secret gerada pela plataforma e devolvida na criação; demais respostas são proposta | TRANSCRICAO | [09:31] Marcos |
+| PRD-RNF-11 | `docs/PRD.md` | Requisito Não Funcional | Proposta: secret nunca em log da plataforma (questão 3 do ADR-004) | TRANSCRICAO | [09:22] Diego |
+| PRD-RNF-12 | `docs/PRD.md` | Requisito Não Funcional | Reprocessamento só por administrador, com registro do usuário | TRANSCRICAO | [09:36] Larissa |
+| PRD-RNF-13 | `docs/PRD.md` | Requisito Não Funcional | Demais operações para qualquer usuário autenticado nesta fase | TRANSCRICAO | [09:37] Sofia |
+| PRD-RNF-14 | `docs/PRD.md` | Requisito Não Funcional | Revisão de segurança antes da entrada em produção | TRANSCRICAO | [09:46] Sofia |
+| PRD-RNF-15 | `docs/PRD.md` | Requisito Não Funcional | Cliente vê o histórico de entregas | TRANSCRICAO | [09:34] Marcos |
+| PRD-RNF-16 | `docs/PRD.md` | Requisito Não Funcional | Proposta: operação sabe quantas entregas esgotadas aguardam e se os envios pararam | TRANSCRICAO | [09:18] Diego |
+| PRD-RNF-17 | `docs/PRD.md` | Requisito Não Funcional | Registro de quem reprocessou disponível para auditoria | TRANSCRICAO | [09:36] Sofia |
+| PRD-RNF-18 | `docs/PRD.md` | Requisito Não Funcional | Toda mudança de status desejada gera notificação; mudança desfeita não gera; exceções propostas | TRANSCRICAO | [09:40] Bruno |
+| PRD-RNF-19 | `docs/PRD.md` | Requisito Não Funcional | Entrega pelo menos uma vez; cliente descarta repetidas pelo identificador | TRANSCRICAO | [09:25] Diego |
+| PRD-RNF-20 | `docs/PRD.md` | Requisito Não Funcional | Notificação reflete o pedido no momento da mudança | TRANSCRICAO | [09:52] Larissa |
+| PRD-RNF-21 | `docs/PRD.md` | Requisito Não Funcional | Sem ordem global; ordem por pedido não garantida no reenvio nem no reprocessamento (RFC-QA-05) | TRANSCRICAO | [09:14] Marcos |
+| PRD-RNF-22 | `docs/PRD.md` | Requisito Não Funcional | Limite de 64 KB com erro; destino da notificação acima do limite é proposta | TRANSCRICAO | [09:24] Larissa |
+| PRD-RNF-23 | `docs/PRD.md` | Requisito Não Funcional | Só a mudança de status do pedido muda por dentro, com o contrato mantido; exclusão de cliente com webhook passa a ser recusada | TRANSCRICAO | [09:40] Bruno |
+| PRD-DEC-01 | `docs/PRD.md` | Decisão | Outbox no MySQL na transação da mudança de status, sem infra nova (ADR-001) | TRANSCRICAO | [09:08] Larissa |
+| PRD-DEC-02 | `docs/PRD.md` | Decisão | Worker separado com polling de 2 s (ADR-002) | TRANSCRICAO | [09:10] Larissa |
+| PRD-DEC-03 | `docs/PRD.md` | Decisão | Retry com backoff, DLQ separada e reprocessamento por administrador (ADR-003) | TRANSCRICAO | [09:17] Larissa |
+| PRD-DEC-04 | `docs/PRD.md` | Decisão | HMAC-SHA256 sobre o corpo, secret por webhook, rotação com 24 h (ADR-004) | TRANSCRICAO | [09:22] Sofia |
+| PRD-DEC-05 | `docs/PRD.md` | Decisão | At-least-once com identificador para deduplicação no cliente (ADR-005) | TRANSCRICAO | [09:26] Larissa |
+| PRD-DEC-06 | `docs/PRD.md` | Decisão | Reuso dos padrões do projeto, webhook como módulo da mesma base (ADR-006) | TRANSCRICAO | [09:30] Larissa |
+| PRD-DEC-07 | `docs/PRD.md` | Decisão | Snapshot na inserção e filtro por status antes de registrar (ADR-007) | TRANSCRICAO | [09:52] Bruno |
+| PRD-DEP-01 | `docs/PRD.md` | Dependência | Revisão de segurança de pelo menos 2 dias úteis, incluída no prazo | TRANSCRICAO | [09:46] Sofia |
+| PRD-DEP-02 | `docs/PRD.md` | Dependência | Documentação no portal: como integrar e aviso de repetição | TRANSCRICAO | [09:40] Marcos |
+| PRD-DEP-03 | `docs/PRD.md` | Dependência | Marcos confirma o prazo com a Atlas e atualiza os clientes | TRANSCRICAO | [09:47] Marcos |
+| PRD-DEP-04 | `docs/PRD.md` | Dependência | Respostas de produto às RFC-QA-05, RFC-QA-07 e RFC-QA-08 antes de codar | TRANSCRICAO | [09:50] Larissa |
+| PRD-DEP-05 | `docs/PRD.md` | Dependência | Hipótese: usuários que representam o cliente são usuários comuns, sem vínculo com cliente | TRANSCRICAO | [09:32] Marcos |
+| PRD-DEP-06 | `docs/PRD.md` | Dependência | Painel visual do time de frontend, fora desta fase, dependeria do histórico | TRANSCRICAO | [09:40] Larissa |
+| PRD-RISCO-01 | `docs/PRD.md` | Risco | Atraso na entrega e churn da Atlas; blocos já somam 3 sprints antes da revisão | TRANSCRICAO | [09:00] Marcos |
+| PRD-RISCO-02 | `docs/PRD.md` | Risco | Cliente que não descarta notificações repetidas | TRANSCRICAO | [09:25] Diego |
+| PRD-RISCO-03 | `docs/PRD.md` | Risco | Vazamento da secret pelo cliente | TRANSCRICAO | [09:22] Diego |
+| PRD-RISCO-04 | `docs/PRD.md` | Risco | Cliente fora do ar por mais que a janela de reenvio depende de reprocessamento manual | TRANSCRICAO | [09:17] Marcos |
+| PRD-RISCO-05 | `docs/PRD.md` | Risco | Consequência derivada: notificações de um pedido fora de ordem no reenvio e no reprocessamento | TRANSCRICAO | [09:17] Larissa |
+| PRD-RISCO-06 | `docs/PRD.md` | Risco | Meta de 10 s não atendida quando o primeiro envio falha | TRANSCRICAO | [09:02] Marcos |
+| PRD-CA-01 | `docs/PRD.md` | Critério de Aceitação | Mudança de status desejada gera notificação; mudança desfeita não gera | TRANSCRICAO | [09:40] Bruno |
+| PRD-CA-02 | `docs/PRD.md` | Critério de Aceitação | Webhook que não escolheu o status não recebe | TRANSCRICAO | [09:34] Bruno |
+| PRD-CA-03 | `docs/PRD.md` | Critério de Aceitação | Primeiro envio até 2 s após a mudança no caminho feliz, sem prometer 10 s com reenvio | TRANSCRICAO | [09:10] Larissa |
+| PRD-CA-04 | `docs/PRD.md` | Critério de Aceitação | URL sem https recusada | TRANSCRICAO | [09:23] Sofia |
+| PRD-CA-05 | `docs/PRD.md` | Critério de Aceitação | Proposta: lista de status inválida recusada | TRANSCRICAO | [09:33] Marcos |
+| PRD-CA-06 | `docs/PRD.md` | Critério de Aceitação | Sem resposta em 10 s é falha e recebe reenvio | TRANSCRICAO | [09:42] Diego |
+| PRD-CA-07 | `docs/PRD.md` | Critério de Aceitação | Intervalos 1m/5m/30m/2h/12h e entregas esgotadas ao fim; teto proposto (RFC-QA-08) | TRANSCRICAO | [09:17] Larissa |
+| PRD-CA-08 | `docs/PRD.md` | Critério de Aceitação | Cliente verifica a assinatura com a secret; 24 h após rotação é proposta (RFC-QA-09) | TRANSCRICAO | [09:22] Sofia |
+| PRD-CA-09 | `docs/PRD.md` | Critério de Aceitação | Mesmo identificador da notificação em todos os envios | TRANSCRICAO | [09:25] Diego |
+| PRD-CA-10 | `docs/PRD.md` | Critério de Aceitação | Reprocessamento só por administrador, registrado com o usuário | TRANSCRICAO | [09:36] Larissa |
+| PRD-CA-11 | `docs/PRD.md` | Critério de Aceitação | Proposta: reprocessamento mantém identificador; segunda tentativa recusada (RFC-QA-11) | TRANSCRICAO | [09:18] Diego |
+| PRD-CA-12 | `docs/PRD.md` | Critério de Aceitação | Secret na resposta da criação; só nela e na rotação é proposta | TRANSCRICAO | [09:31] Marcos |
+| PRD-CA-13 | `docs/PRD.md` | Critério de Aceitação | Proposta: secret nunca em log da plataforma | TRANSCRICAO | [09:22] Diego |
+| PRD-CA-14 | `docs/PRD.md` | Critério de Aceitação | Histórico com no máximo os últimos 100 envios | TRANSCRICAO | [09:34] Marcos |
+| PRD-CA-15 | `docs/PRD.md` | Critério de Aceitação | 64 KB é erro; não desfazer a mudança de status é proposta | TRANSCRICAO | [09:24] Larissa |
+| PRD-CA-16 | `docs/PRD.md` | Critério de Aceitação | Revisão de segurança concluída antes da entrada em produção | TRANSCRICAO | [09:46] Sofia |
+| PRD-CA-17 | `docs/PRD.md` | Critério de Aceitação | Documentação publicada no portal do desenvolvedor | TRANSCRICAO | [09:40] Marcos |
+| PRD-TESTE-01 | `docs/PRD.md` | Estratégia de Teste | Testes de integração com vitest e supertest contra o MySQL real, no padrão do repositório | CODIGO | tests/orders.test.ts |
+| PRD-TESTE-02 | `docs/PRD.md` | Estratégia de Teste | Falha forçada no registro da notificação desfaz a mudança de status | TRANSCRICAO | [09:40] Bruno |
+| PRD-TESTE-03 | `docs/PRD.md` | Estratégia de Teste | Verificação da assinatura com a secret do webhook | TRANSCRICAO | [09:22] Sofia |
+| PRD-TESTE-04 | `docs/PRD.md` | Estratégia de Teste | Autorização do reprocessamento só para administrador | TRANSCRICAO | [09:36] Larissa |
+| PRD-TESTE-05 | `docs/PRD.md` | Estratégia de Teste | Suíte existente continua passando (script test) | CODIGO | package.json |
+| PRD-TESTE-06 | `docs/PRD.md` | Estratégia de Teste | Revisão de segurança manual de pelo menos 2 dias úteis | TRANSCRICAO | [09:46] Sofia |
+| PRD-TESTE-07 | `docs/PRD.md` | Estratégia de Teste | Revisão do documento de design com Bruno e Diego antes de codar | TRANSCRICAO | [09:50] Larissa |
+| PRD-TESTE-08 | `docs/PRD.md` | Estratégia de Teste | Proposta: Product Manager confere a documentação do portal | TRANSCRICAO | [09:40] Marcos |
 | RFC-PROP-01 | `docs/RFC.md` | Proposta Técnica | Evento gravado na outbox na mesma transação do `changeStatus`; falha na gravação desfaz a mudança (ADR-001) | TRANSCRICAO | [09:08] Larissa |
 | RFC-PROP-02 | `docs/RFC.md` | Proposta Técnica | Filtro por status do pedido antes de gravar e payload em snapshot, sem itens (ADR-007) | TRANSCRICAO | [09:52] Bruno |
 | RFC-PROP-03 | `docs/RFC.md` | Proposta Técnica | Worker em processo separado lê pendentes a cada 2 s; worker único é premissa; ordem por pedido não garantida (RFC-QA-05, RFC-QA-06; ADR-002) | TRANSCRICAO | [09:10] Larissa |
