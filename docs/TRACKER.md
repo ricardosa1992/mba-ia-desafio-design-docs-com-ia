@@ -1,7 +1,8 @@
 # Tracker de Rastreabilidade
 
 Mapa de cada item dos documentos de design até a sua origem na reunião técnica de quinta-feira (`TRANSCRICAO.md`) ou no código existente.
-Cada linha corresponde a um ID definido em um documento: `ADR-NNN` (decisão), `ADR-NNN-ALT-NN` (alternativa), `ADR-NNN-CONS-NN` (consequência); `PRD-*`, `RFC-*` e `FDD-*` seguem o mesmo padrão. Sufixo de letra (`-b`) indica a segunda fonte do mesmo item.
+Cada linha corresponde a um ID definido em um documento. PRD, RFC e FDD usam prefixo do documento, tipo e número de 2 dígitos (`PRD-FR-01`, `RFC-QA-03`, `FDD-CONTRATO-02`; o significado do tipo está na coluna Tipo); nos ADRs, `ADR-NNN` é a decisão, `ADR-NNN-ALT-NN` uma alternativa e `ADR-NNN-CONS-NN` uma consequência.
+Ordem: PRD, RFC, ADR-001 a ADR-007 e FDD; dentro de cada documento, por tipo (na ordem das seções) e por número. Número que falta na sequência é item removido numa revisão: IDs não são renumerados nem reaproveitados. Sufixo `b` (`FDD-INT-01b`) é a segunda fonte do mesmo item, logo depois da linha base.
 Fonte `TRANSCRICAO`: Localização é a fala `[hh:mm] Nome` que sustenta o item. Fonte `CODIGO`: Localização é o arquivo do repositório.
 Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indica item que a reunião não decidiu diretamente; a Localização é a fala ou o arquivo que o motiva.
 
@@ -24,7 +25,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-PUB-11 | `docs/PRD.md` | Público-alvo | Cenário: cliente troca a secret após vazamento e tem 24 h para migrar | TRANSCRICAO | [09:21] Sofia |
 | PRD-PUB-12 | `docs/PRD.md` | Público-alvo | Cenário: cliente descarta notificação repetida pelo identificador | TRANSCRICAO | [09:25] Diego |
 | PRD-OBJ-01 | `docs/PRD.md` | Objetivo | Notificação abaixo de 10 s; só atendida quando o primeiro envio dá certo (RFC-QA-07) | TRANSCRICAO | [09:02] Marcos |
-| PRD-OBJ-02 | `docs/PRD.md` | Objetivo | Feature disponível em 3 sprints; Atlas pediu fim de novembro, a confirmar | TRANSCRICAO | [09:47] Larissa |
+| PRD-OBJ-02 | `docs/PRD.md` | Objetivo | Prazo da primeira entrega: 3 sprints, com a revisão de segurança incluída | TRANSCRICAO | [09:47] Larissa |
 | PRD-OBJ-03 | `docs/PRD.md` | Objetivo | Reenvio automático por quase 15 h antes de exigir ação manual; contagem em aberto (RFC-QA-08) | TRANSCRICAO | [09:17] Diego |
 | PRD-OBJ-04 | `docs/PRD.md` | Objetivo | Histórico com os últimos 100 envios por webhook | TRANSCRICAO | [09:34] Marcos |
 | PRD-OBJ-05 | `docs/PRD.md` | Objetivo | Toda notificação com assinatura verificável pelo cliente | TRANSCRICAO | [09:19] Sofia |
@@ -50,7 +51,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-FR-04 | `docs/PRD.md` | Requisito Funcional | Remover webhook; efeito sobre notificações já registradas é proposta | TRANSCRICAO | [09:33] Bruno |
 | PRD-FR-05 | `docs/PRD.md` | Requisito Funcional | Cada webhook escolhe os status do pedido e só recebe esses | TRANSCRICAO | [09:33] Marcos |
 | PRD-FR-06 | `docs/PRD.md` | Requisito Funcional | Notificar a mudança de status com dados básicos do pedido, sem itens, refletindo o momento da mudança | TRANSCRICAO | [09:00] Marcos |
-| PRD-FR-07 | `docs/PRD.md` | Requisito Funcional | Assinar cada notificação com a secret do webhook para o cliente verificar origem e integridade | TRANSCRICAO | [09:19] Sofia |
+| PRD-FR-07 | `docs/PRD.md` | Requisito Funcional | Assinar cada notificação com a secret do webhook para o cliente verificar origem e integridade | TRANSCRICAO | [09:22] Sofia |
 | PRD-FR-08 | `docs/PRD.md` | Requisito Funcional | Reenviar com intervalos 1m/5m/30m/2h/12h por quase 15 h; contagem em aberto | TRANSCRICAO | [09:17] Larissa |
 | PRD-FR-09 | `docs/PRD.md` | Requisito Funcional | Guardar entregas esgotadas com conteúdo, motivo e momento | TRANSCRICAO | [09:18] Diego |
 | PRD-FR-10 | `docs/PRD.md` | Requisito Funcional | Reprocessar entrega esgotada, só administrador, com registro de quem fez | TRANSCRICAO | [09:18] Diego |
@@ -79,6 +80,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-RNF-21 | `docs/PRD.md` | Requisito Não Funcional | Sem ordem global; ordem por pedido não garantida no reenvio nem no reprocessamento (RFC-QA-05) | TRANSCRICAO | [09:14] Marcos |
 | PRD-RNF-22 | `docs/PRD.md` | Requisito Não Funcional | Limite de 64 KB com erro; destino da notificação acima do limite é proposta | TRANSCRICAO | [09:24] Larissa |
 | PRD-RNF-23 | `docs/PRD.md` | Requisito Não Funcional | Só a mudança de status do pedido muda por dentro, com o contrato mantido; exclusão de cliente com webhook passa a ser recusada | TRANSCRICAO | [09:40] Bruno |
+| PRD-RNF-23b | `docs/PRD.md` | Requisito Não Funcional | Exclusão de cliente com webhook recusada como a de cliente com pedido (chave estrangeira com `ON DELETE RESTRICT`) | CODIGO | prisma/migrations/20260519182739_init/migration.sql |
 | PRD-DEC-01 | `docs/PRD.md` | Decisão | Outbox no MySQL na transação da mudança de status, sem infra nova (ADR-001) | TRANSCRICAO | [09:08] Larissa |
 | PRD-DEC-02 | `docs/PRD.md` | Decisão | Worker separado com polling de 2 s (ADR-002) | TRANSCRICAO | [09:10] Larissa |
 | PRD-DEC-03 | `docs/PRD.md` | Decisão | Retry com backoff, DLQ separada e reprocessamento por administrador (ADR-003) | TRANSCRICAO | [09:17] Larissa |
@@ -107,7 +109,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-CA-07 | `docs/PRD.md` | Critério de Aceitação | Intervalos 1m/5m/30m/2h/12h e entregas esgotadas ao fim; teto proposto (RFC-QA-08) | TRANSCRICAO | [09:17] Larissa |
 | PRD-CA-08 | `docs/PRD.md` | Critério de Aceitação | Cliente verifica a assinatura com a secret; 24 h após rotação é proposta (RFC-QA-09) | TRANSCRICAO | [09:22] Sofia |
 | PRD-CA-09 | `docs/PRD.md` | Critério de Aceitação | Mesmo identificador da notificação em todos os envios | TRANSCRICAO | [09:25] Diego |
-| PRD-CA-10 | `docs/PRD.md` | Critério de Aceitação | Reprocessamento só por administrador, registrado com o usuário | TRANSCRICAO | [09:36] Larissa |
+| PRD-CA-10 | `docs/PRD.md` | Critério de Aceitação | Reprocessamento só por administrador, registrado com o usuário | TRANSCRICAO | [09:36] Sofia |
 | PRD-CA-11 | `docs/PRD.md` | Critério de Aceitação | Proposta: reprocessamento mantém identificador; segunda tentativa recusada (RFC-QA-11) | TRANSCRICAO | [09:18] Diego |
 | PRD-CA-12 | `docs/PRD.md` | Critério de Aceitação | Secret na resposta da criação; só nela e na rotação é proposta | TRANSCRICAO | [09:31] Marcos |
 | PRD-CA-13 | `docs/PRD.md` | Critério de Aceitação | Proposta: secret nunca em log da plataforma | TRANSCRICAO | [09:22] Diego |
@@ -155,7 +157,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | RFC-RISCO-03 | `docs/RFC.md` | Risco | Outbox e DLQ sem política de retenção (ADR-001-CONS-06, ADR-003-CONS-15) | TRANSCRICAO | [09:08] Diego |
 | RFC-RISCO-04 | `docs/RFC.md` | Risco | Worker único sem garantia e worker parado sem detecção (ADR-002-CONS-10, ADR-002-CONS-13) | TRANSCRICAO | [09:12] Diego |
 | RFC-RISCO-05 | `docs/RFC.md` | Risco | Meta de 10 s só atendida no caminho feliz; primeiro envio que falha espera pelo menos 1 min (ADR-002-CONS-12) | TRANSCRICAO | [09:17] Larissa |
-| RFC-RISCO-06 | `docs/RFC.md` | Risco | Limite de 64 KB checado na inserção com erro desfaz a mudança de status (ADR-007-CONS-09) | TRANSCRICAO | [09:24] Larissa |
+| RFC-RISCO-06 | `docs/RFC.md` | Risco | Consequência derivada: se o limite de 64 KB for checado na inserção com erro, a mudança de status é desfeita (ADR-007-CONS-09) | TRANSCRICAO | [09:24] Larissa |
 | RFC-IMP-01 | `docs/RFC.md` | Impacto | `changeStatus` ganha escrita na outbox, leitura da configuração e nova causa de rollback (ADR-001-CONS-04, ADR-007-CONS-05) | TRANSCRICAO | [09:40] Bruno |
 | RFC-IMP-02 | `docs/RFC.md` | Impacto | Segundo processo para implantar, supervisionar e monitorar; carga contínua no MySQL (ADR-002-CONS-08, ADR-002-CONS-15) | TRANSCRICAO | [09:11] Larissa |
 | RFC-IMP-03 | `docs/RFC.md` | Impacto | Cliente verifica assinatura, deduplica e lida com eventos fora de ordem; documentação no portal | TRANSCRICAO | [09:26] Marcos |
@@ -183,8 +185,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | ADR-002-CONS-04 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Atraso de até 2 s no pior caso causado pelo polling | TRANSCRICAO | [09:10] Larissa |
 | ADR-002-CONS-05 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Sem ordem global entre pedidos; clientes não pediram | TRANSCRICAO | [09:13] Larissa |
 | ADR-002-CONS-06 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Vários workers ao mesmo tempo perdem a ordem por pedido; particionamento adiado | TRANSCRICAO | [09:13] Diego |
-| ADR-002-CONS-07 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: retry reordena eventos do mesmo pedido mesmo com worker único | TRANSCRICAO | [09:12] Diego |
-| ADR-002-CONS-16 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: reprocessamento da DLQ também entrega fora de ordem (ver ADR-003) | TRANSCRICAO | [09:18] Diego |
+| ADR-002-CONS-07 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: retry reordena eventos do mesmo pedido mesmo com worker único | TRANSCRICAO | [09:17] Larissa |
 | ADR-002-CONS-08 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: segundo processo sem implantação nem supervisão definidas | TRANSCRICAO | [09:11] Larissa |
 | ADR-002-CONS-09 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Trade-off | Troca reatividade imediata e ordem garantida por simplicidade no banco existente | TRANSCRICAO | [09:10] Larissa |
 | ADR-002-CONS-10 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: premissa de worker único não garantida em deploy, reinício ou execução manual | TRANSCRICAO | [09:12] Diego |
@@ -193,6 +194,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | ADR-002-CONS-13 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: worker parado não é percebido; sem health check nem métricas | CODIGO | src/app.ts |
 | ADR-002-CONS-14 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: desligamento no modelo atual deixa linha presa em processando | CODIGO | src/server.ts |
 | ADR-002-CONS-15 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: custo contínuo no MySQL e pool de conexões próprio por instância | CODIGO | src/config/database.ts |
+| ADR-002-CONS-16 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: reprocessamento da DLQ também entrega fora de ordem (ver ADR-003) | TRANSCRICAO | [09:18] Diego |
 | ADR-003 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Decisão | Retry com backoff 1m/5m/30m/2h/12h, teto com contagem em aberto, DLQ separada, reprocessamento ADMIN auditado | TRANSCRICAO | [09:17] Larissa |
 | ADR-003-ALT-01 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Alternativa Descartada | Retry indefinido | TRANSCRICAO | [09:15] Diego |
 | ADR-003-ALT-02 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Alternativa Descartada | 3 tentativas | TRANSCRICAO | [09:16] Diego |
@@ -265,7 +267,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | ADR-007-CONS-07 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Consequência | Consequência derivada: lista de dados básicos do pedido não fechada | TRANSCRICAO | [09:43] Diego |
 | ADR-007-CONS-08 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Trade-off | Troca payload atual e filtro flexível por fidelidade ao momento e outbox menor | TRANSCRICAO | [09:52] Larissa |
 | ADR-007-CONS-09 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Consequência | Consequência derivada: limite de 64 KB checado na inserção desfaria a mudança de status | TRANSCRICAO | [09:24] Larissa |
-| ADR-007-CONS-10 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Consequência | Consequência derivada: efeito do estado ativo no filtro e destino das linhas de webhook desativado ou removido não definidos | TRANSCRICAO | [09:21] Sofia |
+| ADR-007-CONS-10 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Consequência | Consequência derivada: efeito do estado ativo no filtro e destino das linhas de webhook desativado ou removido não definidos | TRANSCRICAO | [09:21] Bruno |
 | ADR-007-CONS-11 | `docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md` | Consequência | Consequência derivada: filtro pede índice pelo cliente; snapshot ocupa outbox e DLQ | TRANSCRICAO | [09:34] Bruno |
 | FDD-OBJ-01 | `docs/FDD.md` | Objetivo Técnico | Linha da outbox existe se e somente se a mudança de status pelo `changeStatus` com webhook interessado foi confirmada, para payload de até 64 KB (ADR-001) | TRANSCRICAO | [09:06] Diego |
 | FDD-OBJ-02 | `docs/FDD.md` | Objetivo Técnico | Primeiro envio até 2 s depois da gravação no caminho feliz, para a meta de notificação abaixo de 10 s (alcance em RFC-QA-07) | TRANSCRICAO | [09:10] Larissa |
@@ -336,6 +338,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-RES-11 | `docs/FDD.md` | Resiliência | Fallback atual = DLQ e reprocessamento manual; e-mail é fase futura e não é fallback | TRANSCRICAO | [09:37] Larissa |
 | FDD-RES-12 | `docs/FDD.md` | Resiliência | Proposta: envio de uma linha de cada vez faz endpoint lento segurar o ciclo até 10 s por linha (RFC-QA-06) | TRANSCRICAO | [09:42] Diego |
 | FDD-OBS-01 | `docs/FDD.md` | Observabilidade | Proposta: eventos de log `webhook_*` em snake_case com campos em camelCase, quem loga e nível | CODIGO | src/server.ts |
+| FDD-OBS-01b | `docs/FDD.md` | Observabilidade | Campos de log em camelCase, como `requestId` do request logger | CODIGO | src/middlewares/request-logger.middleware.ts |
 | FDD-OBS-02 | `docs/FDD.md` | Observabilidade | Proposta: logs do worker por `logger.child({ component: 'webhook-worker' })`, sem alterar `base.service` | CODIGO | src/shared/logger/index.ts |
 | FDD-OBS-03 | `docs/FDD.md` | Observabilidade | Proposta: `secret`, `previousSecret` e os mesmos caminhos com `*.` no `redactPaths`; nenhum log do cadastro completo nem dos headers (questão 3 do ADR-004) | TRANSCRICAO | [09:22] Diego |
 | FDD-OBS-04 | `docs/FDD.md` | Observabilidade | Auditoria do reprocessamento com o usuário pelo log `webhook_dead_letter_replayed` | TRANSCRICAO | [09:36] Sofia |
@@ -350,6 +353,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-DEP-01 | `docs/FDD.md` | Dependência | Node >=20: `fetch`, `AbortSignal.timeout` e `crypto` (`createHmac`, `randomBytes`, `timingSafeEqual`), verificados na documentação da v20 | TRANSCRICAO | [09:20] Sofia |
 | FDD-DEP-02 | `docs/FDD.md` | Dependência | MySQL 8.0 do `docker-compose.yml`, com `SKIP LOCKED` e colunas `Json` | TRANSCRICAO | [09:07] Diego |
 | FDD-DEP-03 | `docs/FDD.md` | Dependência | Prisma 5.22.0: `$queryRaw` na transação, migração nova, `PrismaClient` próprio no worker com a mesma `DATABASE_URL` | TRANSCRICAO | [09:30] Bruno |
+| FDD-DEP-03b | `docs/FDD.md` | Dependência | Prisma 5.22.0 e migração por `npm run db:migrate` (`prisma migrate dev`) | CODIGO | package.json |
 | FDD-DEP-04 | `docs/FDD.md` | Dependência | `uuid` 11.0.3, `zod` 3.23.8 e `pino` 9.5.0 já declarados | TRANSCRICAO | [09:25] Diego |
 | FDD-DEP-05 | `docs/FDD.md` | Dependência | Nenhuma dependência nova | TRANSCRICAO | [09:30] Larissa |
 | FDD-DEP-06 | `docs/FDD.md` | Dependência | Worker importa `src/config/env.ts` e exige as mesmas variáveis da API, inclusive `JWT_SECRET` | CODIGO | src/config/env.ts |
@@ -385,7 +389,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-INT-21 | `docs/FDD.md` | Integração | Proposta: `prisma/seed.ts` apaga as tabelas novas antes de `customer` | CODIGO | prisma/seed.ts |
 | FDD-CA-01 | `docs/FDD.md` | Critério de Aceitação | Mudança pelo `changeStatus` com webhook interessado grava linha pendente; proposta: uma por webhook, com o mesmo `eventId` | TRANSCRICAO | [09:40] Bruno |
 | FDD-CA-02 | `docs/FDD.md` | Critério de Aceitação | Falha na gravação da outbox mantém o status antigo e nenhuma linha; confirma a hipótese do rollback | TRANSCRICAO | [09:40] Bruno |
-| FDD-CA-03 | `docs/FDD.md` | Critério de Aceitação | Webhook que não quer o status não ganha linha; proposta: inativo ou removido também não | TRANSCRICAO | [09:34] Bruno |
+| FDD-CA-03 | `docs/FDD.md` | Critério de Aceitação | Status que nenhum webhook do cliente quer não grava nada; proposta: sem linha para webhook que não quer, inativo ou removido | TRANSCRICAO | [09:34] Bruno |
 | FDD-CA-04 | `docs/FDD.md` | Critério de Aceitação | Primeiro envio até 2 s depois da gravação, mais o tempo do envio, no caminho feliz | TRANSCRICAO | [09:10] Larissa |
 | FDD-CA-05 | `docs/FDD.md` | Critério de Aceitação | Sem resposta em 10 s, o envio falha; proposta: motivo `WEBHOOK_DELIVERY_TIMEOUT`, estado falhou e próximo envio em 1 min | TRANSCRICAO | [09:42] Diego |
 | FDD-CA-06 | `docs/FDD.md` | Critério de Aceitação | Próximo envio pela tabela da seção 5.3; proposta: falha do envio 6 leva à DLQ | TRANSCRICAO | [09:17] Larissa |

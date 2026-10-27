@@ -94,7 +94,7 @@ Se a outbox terá uma linha por evento ou uma por webhook de destino está em ab
 - ADR-007-ALT-01: `[09:51] Bruno` (levanta guardar só o id), `[09:52] Larissa` (descarte).
 - ADR-007-ALT-02: `[09:34] Diego` (pergunta inserção ou envio), `[09:34] Bruno` (descarte).
 - ADR-007-ALT-03: `[09:43] Diego` (descarte), `[09:44] Bruno` (apoia o payload enxuto).
-- Consequências: CONS-01 `[09:52] Larissa`; CONS-02 `[09:34] Bruno`; CONS-03 `[09:52] Bruno`; CONS-04 `[09:48] Larissa` (resumo confirmado antes do snapshot) e `[09:52] Bruno`; CONS-05 `[09:34] Bruno` e `[09:40] Bruno`; CONS-06 `[09:52] Larissa` e `[09:43] Diego`; CONS-07 `[09:43] Diego`; CONS-09 `[09:24] Larissa` (64 KB, erro caso ultrapasse) e `[09:40] Bruno` (rollback se a inserção falhar); CONS-10 `[09:21] Sofia` (estado ativo) e `[09:33] Bruno` (DELETE para remover); CONS-11 `[09:34] Bruno` (filtro pelos webhooks do cliente) e `[09:18] Diego` (DLQ com o payload); CONS-08 `[09:52] Larissa`.
+- Consequências: CONS-01 `[09:52] Larissa`; CONS-02 `[09:34] Bruno`; CONS-03 `[09:52] Bruno`; CONS-04 `[09:48] Larissa` (resumo confirmado antes do snapshot) e `[09:52] Bruno`; CONS-05 `[09:34] Bruno` e `[09:40] Bruno`; CONS-06 `[09:52] Larissa` e `[09:43] Diego`; CONS-07 `[09:43] Diego`; CONS-09 `[09:24] Larissa` (64 KB, erro caso ultrapasse) e `[09:40] Bruno` (rollback se a inserção falhar); CONS-10 `[09:21] Bruno` (estado ativo, confirmado por Sofia) e `[09:33] Bruno` (DELETE para remover); CONS-11 `[09:34] Bruno` (filtro pelos webhooks do cliente) e `[09:18] Diego` (DLQ com o payload); CONS-08 `[09:52] Larissa`.
 - Código:
   - `prisma/schema.prisma`: `enum OrderStatus` e `model Order`.
   - `src/modules/orders/order.status.ts`: `transitions`.
