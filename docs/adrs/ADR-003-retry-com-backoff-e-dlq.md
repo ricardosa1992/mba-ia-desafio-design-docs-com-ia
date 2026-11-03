@@ -4,7 +4,7 @@
 
 **Aceito**, decidido na reunião técnica de quinta-feira (redigido em 2026-10-09, revisado em 2026-10-18).
 
-> Aceito quanto ao retry com backoff exponencial nos intervalos 1 min, 5 min, 30 min, 2 h e 12 h, à DLQ em tabela separada e ao reprocessamento manual restrito a ADMIN, com auditoria. O número de envios por evento e, com ele, a janela efetiva de reentrega dependem da questão 1.
+> Aceito quanto ao retry com backoff exponencial nos intervalos 1 min, 5 min, 30 min, 2 h e 12 h, à DLQ em tabela separada e ao reprocessamento manual restrito a ADMIN, com auditoria. A leitura do teto como envio inicial mais 5 retentativas, a que dá a janela de quase 15 h, é hipótese a confirmar na questão 1.
 
 - **Decisores**: Diego (Engenheiro Sênior, Plataforma), Larissa (Tech Lead), Sofia (Engenheira de Segurança).
 - **Consultados**: Bruno (Engenheiro Pleno, Pedidos), Marcos (Product Manager).
@@ -25,7 +25,7 @@ Neste ADR, "envio" é cada chamada HTTP ao endpoint do cliente e "retentativa" �
 ## Decisão
 
 - Um envio que falha é repetido com backoff exponencial, nos intervalos 1 min, 5 min, 30 min, 2 h e 12 h.
-- O teto foi fechado como "5 tentativas". Só a leitura "envio inicial mais 5 retentativas" usa os cinco intervalos e fecha a janela de quase 15 h; a contagem exata está em aberto (CONS-05, questão 1).
+- O teto foi fechado como "5 tentativas". **Hipótese:** são o envio inicial mais 5 retentativas, a leitura que usa os cinco intervalos e fecha a janela de quase 15 h dita na reunião; falta a confirmação (CONS-05, questão 1).
 - Um envio sem resposta em 10 s (timeout HTTP) conta como falha. As demais respostas que contam como falha não foram definidas (CONS-11).
 - Esgotados os envios, o evento é falha permanente e vai para a DLQ, que guarda o evento e o motivo da falha.
 - O reprocessamento é manual, por um endpoint administrativo que devolve o evento à outbox no estado pendente. Ele é restrito a usuários com papel ADMIN, pelo controle de papéis que a API já tem, e registra quem o fez, para auditoria.
@@ -68,8 +68,8 @@ Caminho do endpoint, cálculo do momento do próximo envio e tabela da DLQ estã
 
 #### Contagem e janela
 
-- **ADR-003-CONS-05**: **Derivada:** "5 tentativas" e "cinco intervalos com quase 15 h" só fecham juntos com 6 envios. Com 5 envios no total, só os quatro primeiros intervalos são usados e a janela cai para 156 min, cerca de 2,6 h (1 + 5 + 30 + 120 min). Com envio inicial mais 5 retentativas, são 6 envios e 876 min, cerca de 14,6 h (1 + 5 + 30 + 120 + 720 min). A janela também delimita por quanto tempo o cliente guarda os identificadores para deduplicar ([ADR-005-CONS-10](ADR-005-entrega-at-least-once-com-x-event-id.md)). Ver questão 1.
-- **ADR-003-CONS-06**: Um cliente fora do ar por mais tempo que a janela perde a entrega automática: o evento vai para a DLQ e só volta por reprocessamento de um ADMIN. O produto aceitou esse limite para a janela de quase 15 h (`[09:17] Marcos`); se a resposta da questão 1 for 5 envios no total, a janela cai para cerca de 2,6 h, valor que não foi aceito.
+- **ADR-003-CONS-05**: **Derivada:** "5 tentativas" e "cinco intervalos com quase 15 h" só fecham juntos com 6 envios: envio inicial mais 5 retentativas, 876 min, cerca de 14,6 h (1 + 5 + 30 + 120 + 720 min). **Hipótese:** essa é a contagem pretendida na reunião; a confirmação e a outra contagem possível estão na questão 1. A janela também delimita por quanto tempo o cliente guarda os identificadores para deduplicar ([ADR-005-CONS-10](ADR-005-entrega-at-least-once-com-x-event-id.md)). Ver questão 1.
+- **ADR-003-CONS-06**: Um cliente fora do ar por mais tempo que a janela perde a entrega automática: o evento vai para a DLQ e só volta por reprocessamento de um ADMIN. O produto aceitou esse limite para a janela de quase 15 h (`[09:17] Marcos`); a outra contagem da questão 1 daria uma janela menor, que não foi aceita.
 
 #### Semântica da falha
 
@@ -128,8 +128,8 @@ Caminho do endpoint, cálculo do momento do próximo envio e tabela da DLQ estã
 ## Questões em aberto
 
 1. **"5 tentativas" são 5 envios no total ou envio inicial mais 5 retentativas?** Opções:
-   - 5 envios no total: usa os quatro primeiros intervalos e a janela fica em 156 min, cerca de 2,6 h, abaixo das quase 15 h aceitas pelo produto;
-   - envio inicial mais 5 retentativas: usa os cinco intervalos e a janela fica em 876 min, cerca de 14,6 h.
+   - envio inicial mais 5 retentativas (hipótese do CONS-05): usa os cinco intervalos e a janela fica em 876 min, cerca de 14,6 h, a de quase 15 h aceita pelo produto;
+   - 5 envios no total: usa os quatro primeiros intervalos e a janela fica em 156 min, cerca de 2,6 h (1 + 5 + 30 + 120 min), abaixo das quase 15 h aceitas pelo produto.
 
    Afeta o núcleo da decisão. A resposta muda o atraso máximo da opção (b) da questão 1 do [ADR-002](ADR-002-worker-separado-com-polling.md) e a janela de retenção da questão 3 do [ADR-005](ADR-005-entrega-at-least-once-com-x-event-id.md). Responde: arquitetura (Larissa), com aceite de produto (Marcos) sobre a janela. Origem: CONS-05.
 2. **Quais respostas do cliente contam como falha que deve ser repetida?** Opções:

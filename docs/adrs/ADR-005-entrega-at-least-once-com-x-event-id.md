@@ -52,7 +52,7 @@ Geração do UUID, biblioteca usada e semântica do header no contrato de entreg
 
 - **ADR-005-CONS-04**: O cliente pode receber o mesmo evento mais de uma vez e precisa estar preparado. A escolha transfere responsabilidade para o cliente.
 - **ADR-005-CONS-05**: **Derivada:** a deduplicação depende de o cliente ler a documentação no portal; um cliente que não deduplica processa a repetição duas vezes.
-- **ADR-005-CONS-10**: **Derivada:** para deduplicar, o cliente precisa guardar os identificadores já recebidos por algum tempo. O retry dura até 876 min, cerca de 14,6 h, ou até 156 min, cerca de 2,6 h, conforme a questão 1 do [ADR-003](ADR-003-retry-com-backoff-e-dlq.md). O reprocessamento manual pode acontecer a qualquer momento depois. Nenhuma janela de retenção foi definida para o cliente. Ver questão 3.
+- **ADR-005-CONS-10**: **Derivada:** para deduplicar, o cliente precisa guardar os identificadores já recebidos por algum tempo. O retry dura até 876 min, cerca de 14,6 h, na contagem que é hipótese no [ADR-003](ADR-003-retry-com-backoff-e-dlq.md) (CONS-05; a outra opção está na questão 1 dele). O reprocessamento manual pode acontecer a qualquer momento depois. Nenhuma janela de retenção foi definida para o cliente. Ver questão 3.
 - **ADR-005-CONS-11**: **Derivada:** como o `event_id` está dentro do corpo assinado ([ADR-004](ADR-004-assinatura-hmac-sha256-por-endpoint.md)), a deduplicação também é a única defesa do cliente contra o reenvio de uma requisição capturada (ADR-004-CONS-07). A eficácia dessa defesa depende da mesma janela de retenção do CONS-10.
 
 #### Identidade do evento
@@ -100,7 +100,7 @@ Geração do UUID, biblioteca usada e semântica do header no contrato de entreg
 
    Afeta detalhes do modelo de dados, não o que foi decidido, salvo a terceira opção. Responder junto com a questão 3 do [ADR-007](ADR-007-payload-snapshot-e-filtro-na-insercao.md). Responde: arquitetura (Larissa). Origem: CONS-07.
 3. **Por quanto tempo o cliente deve guardar os identificadores recebidos, segundo a documentação do portal?** Opções:
-   - a duração do retry (cerca de 14,6 h ou 2,6 h, conforme a questão 1 do [ADR-003](ADR-003-retry-com-backoff-e-dlq.md)), deixando o reprocessamento manual fora da garantia;
+   - a duração do retry (cerca de 14,6 h na hipótese do ADR-003-CONS-05; ver a questão 1 do [ADR-003](ADR-003-retry-com-backoff-e-dlq.md)), deixando o reprocessamento manual fora da garantia;
    - sem limite, cobrindo o reprocessamento a qualquer momento.
 
    Afeta detalhes, não o que foi decidido. Depende da questão 1 deste ADR e da questão 1 do [ADR-003](ADR-003-retry-com-backoff-e-dlq.md); responder junto com a questão 2 do [ADR-004](ADR-004-assinatura-hmac-sha256-por-endpoint.md). Responde: produto (Marcos). Origem: CONS-10.

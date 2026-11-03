@@ -77,7 +77,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-RNF-18 | `docs/PRD.md` | Requisito Não Funcional | Mudança de status desejada feita pela operação normal da API gera notificação; mudança desfeita não gera; exceções propostas | TRANSCRICAO | [09:40] Bruno |
 | PRD-RNF-19 | `docs/PRD.md` | Requisito Não Funcional | Entrega pelo menos uma vez; cliente descarta repetidas pelo identificador (com vários webhooks, junto com o webhook) | TRANSCRICAO | [09:25] Diego |
 | PRD-RNF-20 | `docs/PRD.md` | Requisito Não Funcional | Notificação reflete o pedido no momento da mudança | TRANSCRICAO | [09:52] Larissa |
-| PRD-RNF-21 | `docs/PRD.md` | Requisito Não Funcional | Sem ordem global; ordem por pedido não garantida: reenvio, reprocessamento e demais casos do ADR-002 (RFC-QA-05) | TRANSCRICAO | [09:14] Marcos |
+| PRD-RNF-21 | `docs/PRD.md` | Requisito Não Funcional | Sem ordem global; ordem por pedido vale com processo de envio único; reenvio, reprocessamento e demais casos do ADR-002 podem invertê-la (RFC-QA-05) | TRANSCRICAO | [09:13] Larissa |
 | PRD-RNF-22 | `docs/PRD.md` | Requisito Não Funcional | Limite de 64 KB com erro; destino da notificação acima do limite é proposta | TRANSCRICAO | [09:24] Larissa |
 | PRD-RNF-23 | `docs/PRD.md` | Requisito Não Funcional | Só a mudança de status do pedido muda por dentro, com o contrato mantido; na proposta de não mudar a exclusão de cliente, a de cliente com webhook passa a ser recusada | TRANSCRICAO | [09:40] Bruno |
 | PRD-RNF-23b | `docs/PRD.md` | Requisito Não Funcional | Na proposta de não mudar a exclusão de cliente, a de cliente com webhook é recusada como a de cliente com pedido (chave estrangeira com `ON DELETE RESTRICT`) | CODIGO | prisma/migrations/20260519182739_init/migration.sql |
@@ -106,7 +106,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-CA-04 | `docs/PRD.md` | Critério de Aceitação | URL sem https recusada | TRANSCRICAO | [09:23] Sofia |
 | PRD-CA-05 | `docs/PRD.md` | Critério de Aceitação | Proposta: lista de status inválida recusada | TRANSCRICAO | [09:33] Marcos |
 | PRD-CA-06 | `docs/PRD.md` | Critério de Aceitação | Sem resposta em 10 s é falha e recebe reenvio | TRANSCRICAO | [09:42] Diego |
-| PRD-CA-07 | `docs/PRD.md` | Critério de Aceitação | Progressão de intervalos 1m/5m/30m/2h/12h e entregas esgotadas ao fim; teto proposto (RFC-QA-08) | TRANSCRICAO | [09:17] Larissa |
+| PRD-CA-07 | `docs/PRD.md` | Critério de Aceitação | Progressão de intervalos 1m/5m/30m/2h/12h e entregas esgotadas ao fim; hipótese de envio inicial mais 5 reenvios (RFC-QA-08) | TRANSCRICAO | [09:17] Larissa |
 | PRD-CA-08 | `docs/PRD.md` | Critério de Aceitação | Cliente verifica a assinatura com a secret; 24 h após rotação é proposta (RFC-QA-09) | TRANSCRICAO | [09:22] Sofia |
 | PRD-CA-09 | `docs/PRD.md` | Critério de Aceitação | Mesmo identificador da notificação em todos os reenvios automáticos | TRANSCRICAO | [09:25] Diego |
 | PRD-CA-10 | `docs/PRD.md` | Critério de Aceitação | Reprocessamento só por administrador, registrado com o usuário | TRANSCRICAO | [09:36] Sofia |
@@ -127,7 +127,8 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | PRD-TESTE-08 | `docs/PRD.md` | Estratégia de Teste | Proposta: Product Manager confere a documentação do portal | TRANSCRICAO | [09:40] Marcos |
 | RFC-PROP-01 | `docs/RFC.md` | Proposta Técnica | Evento gravado na outbox na mesma transação do `changeStatus`; falha na gravação desfaz a mudança (ADR-001) | TRANSCRICAO | [09:08] Larissa |
 | RFC-PROP-02 | `docs/RFC.md` | Proposta Técnica | Filtro por status do pedido antes de gravar e payload em snapshot, sem itens (ADR-007) | TRANSCRICAO | [09:52] Bruno |
-| RFC-PROP-03 | `docs/RFC.md` | Proposta Técnica | Worker em processo separado lê pendentes a cada 2 s; worker único é premissa; ordem por pedido não garantida (RFC-QA-05, RFC-QA-06; ADR-002) | TRANSCRICAO | [09:10] Larissa |
+| RFC-PROP-03 | `docs/RFC.md` | Proposta Técnica | Worker em processo separado lê pendentes a cada 2 s; worker único é premissa (ADR-002) | TRANSCRICAO | [09:10] Larissa |
+| RFC-PROP-03b | `docs/RFC.md` | Proposta Técnica | Worker único dá ordem por pedido, salvo reentrega e envio concorrente (RFC-QA-05, RFC-QA-06) | TRANSCRICAO | [09:13] Larissa |
 | RFC-PROP-04 | `docs/RFC.md` | Proposta Técnica | Envio com HMAC-SHA256 do corpo em `X-Signature`, secret por endpoint rotacionável com 24 h, forma da assinatura na convivência em aberto, e UUID em `X-Event-Id` (ADR-004, ADR-005) | TRANSCRICAO | [09:22] Sofia |
 | RFC-PROP-05 | `docs/RFC.md` | Proposta Técnica | Retry com backoff 1m/5m/30m/2h/12h, timeout HTTP de 10 s conta como falha, teto "5 tentativas" com contagem em aberto (ADR-003) | TRANSCRICAO | [09:17] Larissa |
 | RFC-PROP-06 | `docs/RFC.md` | Proposta Técnica | Esgotados os envios, evento vai para `webhook_dead_letter`; reprocessamento por ADMIN com registro de quem fez (ADR-003) | TRANSCRICAO | [09:18] Diego |
@@ -176,7 +177,8 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | ADR-001-CONS-09 | `docs/adrs/ADR-001-outbox-transacional-no-mysql.md` | Consequência | Consequência derivada: mudanças de status fora do `changeStatus` (seed, SQL manual) não geram evento | CODIGO | prisma/seed.ts |
 | ADR-001-CONS-10 | `docs/adrs/ADR-001-outbox-transacional-no-mysql.md` | Consequência | Consequência derivada: custo novo no MySQL compartilhado; volume de eventos não estimado | TRANSCRICAO | [09:40] Bruno |
 | ADR-001-CONS-11 | `docs/adrs/ADR-001-outbox-transacional-no-mysql.md` | Consequência | Consequência derivada: limite de 64 KB checado na inserção desfaria a mudança de status (ver ADR-007) | TRANSCRICAO | [09:24] Larissa |
-| ADR-002 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Decisão | Worker em processo separado, polling de 2 s, worker único como premissa; ordem por pedido não garantida com reentregas, envio concorrente ou vários workers | TRANSCRICAO | [09:10] Larissa |
+| ADR-002 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Decisão | Worker em processo separado, polling de 2 s, worker único como premissa | TRANSCRICAO | [09:10] Larissa |
+| ADR-002b | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Decisão | Ordem por pedido com worker único, como limitação conhecida; reentregas, envio concorrente e vários workers podem invertê-la | TRANSCRICAO | [09:13] Larissa |
 | ADR-002-ALT-01 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Alternativa Descartada | Acionamento reativo pelo banco (trigger do MySQL) | TRANSCRICAO | [09:09] Diego |
 | ADR-002-ALT-02 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Alternativa Descartada | Worker no mesmo processo da API | TRANSCRICAO | [09:11] Diego |
 | ADR-002-CONS-01 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Polling de 2 s atende a meta de 10 s no caminho feliz, aceito pelo produto | TRANSCRICAO | [09:10] Marcos |
@@ -187,15 +189,15 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | ADR-002-CONS-06 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Vários workers ao mesmo tempo perdem a ordem por pedido; particionamento adiado | TRANSCRICAO | [09:13] Diego |
 | ADR-002-CONS-07 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: retry reordena eventos do mesmo pedido mesmo com worker único | TRANSCRICAO | [09:17] Larissa |
 | ADR-002-CONS-08 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: segundo processo sem implantação nem supervisão definidas | TRANSCRICAO | [09:11] Larissa |
-| ADR-002-CONS-09 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Trade-off | Troca reatividade imediata e ordem garantida por simplicidade no banco existente | TRANSCRICAO | [09:10] Larissa |
+| ADR-002-CONS-09 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Trade-off | Troca reatividade imediata e ordem em todos os casos por simplicidade no banco existente | TRANSCRICAO | [09:10] Larissa |
 | ADR-002-CONS-10 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: premissa de worker único não garantida em deploy, reinício ou execução manual | TRANSCRICAO | [09:12] Diego |
 | ADR-002-CONS-11 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: envio das linhas do ciclo uma a uma ou ao mesmo tempo não definido | TRANSCRICAO | [09:42] Diego |
 | ADR-002-CONS-12 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: meta de 10 s só atendida no caminho feliz | TRANSCRICAO | [09:17] Larissa |
 | ADR-002-CONS-13 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: worker parado não é percebido; sem health check nem métricas | CODIGO | src/app.ts |
 | ADR-002-CONS-14 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: desligamento no modelo atual deixa linha presa em processando | CODIGO | src/server.ts |
-| ADR-002-CONS-15 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: custo contínuo no MySQL e pool de conexões próprio por instância, com o tamanho padrão da 5.22.0 | CODIGO | src/config/database.ts |
+| ADR-002-CONS-15 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: custo contínuo no MySQL e segundo pool de conexões sem `connection_limit`; hipótese de soma abaixo do limite em produção | CODIGO | src/config/database.ts |
 | ADR-002-CONS-16 | `docs/adrs/ADR-002-worker-separado-com-polling.md` | Consequência | Consequência derivada: reprocessamento da DLQ também entrega fora de ordem (ver ADR-003) | TRANSCRICAO | [09:18] Diego |
-| ADR-003 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Decisão | Retry com backoff 1m/5m/30m/2h/12h, teto com contagem em aberto, DLQ separada, reprocessamento ADMIN auditado | TRANSCRICAO | [09:17] Larissa |
+| ADR-003 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Decisão | Retry com backoff 1m/5m/30m/2h/12h, teto de 5 tentativas (hipótese: envio inicial mais 5 retentativas), DLQ separada, reprocessamento ADMIN auditado | TRANSCRICAO | [09:17] Larissa |
 | ADR-003-ALT-01 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Alternativa Descartada | Retry indefinido | TRANSCRICAO | [09:15] Diego |
 | ADR-003-ALT-02 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Alternativa Descartada | 3 tentativas | TRANSCRICAO | [09:16] Diego |
 | ADR-003-ALT-03 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Alternativa Descartada | Marcar "falhou" na própria outbox no lugar da DLQ | TRANSCRICAO | [09:18] Diego |
@@ -203,7 +205,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | ADR-003-CONS-02 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Consequência | Nenhum evento fica sendo reenviado para sempre | TRANSCRICAO | [09:15] Diego |
 | ADR-003-CONS-03 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Consequência | Outbox com leitura limpa; DLQ como evidência | TRANSCRICAO | [09:18] Diego |
 | ADR-003-CONS-04 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Consequência | Reprocessamento devolve o evento à entrega, com registro de quem o fez | TRANSCRICAO | [09:18] Diego |
-| ADR-003-CONS-05 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Consequência | Consequência derivada: 5 tentativas e cinco intervalos só fecham com 6 envios (876 min); com 5 envios, 156 min | TRANSCRICAO | [09:17] Larissa |
+| ADR-003-CONS-05 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Consequência | Hipótese: 5 tentativas são envio inicial mais 5 retentativas, única contagem que fecha os cinco intervalos (876 min); outra contagem na questão 1 | TRANSCRICAO | [09:17] Larissa |
 | ADR-003-CONS-06 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Consequência | Cliente fora além da janela depende de reprocessamento por ADMIN | TRANSCRICAO | [09:17] Marcos |
 | ADR-003-CONS-07 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Consequência | Consequência derivada: significado do estado da outbox falhou não definido | TRANSCRICAO | [09:08] Diego |
 | ADR-003-CONS-08 | `docs/adrs/ADR-003-retry-com-backoff-e-dlq.md` | Consequência | Controle por papel ADMIN fraco: registro público aceita ADMIN | CODIGO | src/modules/auth/auth.routes.ts |
@@ -299,7 +301,7 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-FLUXO-01 | `docs/FDD.md` | Fluxo | Criação do evento no `changeStatus`: filtro por status, snapshot, `eventId` por `uuid`, uma linha por webhook, rollback em erro | TRANSCRICAO | [09:40] Bruno |
 | FDD-FLUXO-02 | `docs/FDD.md` | Fluxo | Proposta: payload acima de 64 KB vai direto para a DLQ sem lançar erro (questão 2 do ADR-007) | TRANSCRICAO | [09:24] Larissa |
 | FDD-FLUXO-03 | `docs/FDD.md` | Fluxo | Ciclo do worker: entry-point, `PrismaClient` próprio, linhas presas, lote com `FOR UPDATE SKIP LOCKED` via `$queryRaw`, envio sequencial com `fetch` e timeout de 10 s, desligamento | TRANSCRICAO | [09:10] Larissa |
-| FDD-FLUXO-04 | `docs/FDD.md` | Fluxo | Retry: tabela dos envios, proposta de 6 envios (876 min) e alternativa de 5 (156 min), cálculo do próximo envio, o que conta como falha | TRANSCRICAO | [09:17] Larissa |
+| FDD-FLUXO-04 | `docs/FDD.md` | Fluxo | Proposta: 6 envios (876 min) pela hipótese do ADR-003-CONS-05; tabela dos envios, cálculo do próximo envio, o que conta como falha | TRANSCRICAO | [09:17] Larissa |
 | FDD-FLUXO-05 | `docs/FDD.md` | Fluxo | Proposta: envios esgotados copiam a linha para a DLQ e a removem da outbox na mesma transação, com o motivo | TRANSCRICAO | [09:18] Diego |
 | FDD-FLUXO-06 | `docs/FDD.md` | Fluxo | Reprocessamento por ADMIN em `POST /api/v1/admin/webhooks/dead-letter/:id/replay`, com log de auditoria; proposta de mesmo `eventId` e recusa de segundo reprocessamento | TRANSCRICAO | [09:35] Diego |
 | FDD-FLUXO-07 | `docs/FDD.md` | Fluxo | Rotação: secret nova por `crypto.randomBytes`, anterior válida por 24 h, proposta de dois valores no `X-Signature` e de nova rotação dentro das 24 h (questão 6 do ADR-004) | TRANSCRICAO | [09:21] Sofia |
@@ -350,15 +352,16 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-OBS-10 | `docs/FDD.md` | Observabilidade | Proposta: tracing distribuído (OpenTelemetry) fora desta fase | CODIGO | package.json |
 | FDD-OBS-11 | `docs/FDD.md` | Observabilidade | Proposta: worker parado detectado pelo log `webhook_cycle_completed` e idade da linha elegível com limiar de 1 min (questão 6 do ADR-002) | TRANSCRICAO | [09:10] Larissa |
 | FDD-OBS-12 | `docs/FDD.md` | Observabilidade | Proposta: DLQ acompanhada pelo log `webhook_dead_lettered` e pela consulta das entradas sem reprocessamento (questão 4 do ADR-003) | TRANSCRICAO | [09:18] Diego |
-| FDD-DEP-01 | `docs/FDD.md` | Dependência | Node >=20: `fetch`, `AbortSignal.timeout` e `crypto` (`createHmac`, `randomBytes`, `timingSafeEqual`), verificados na documentação da v20 | TRANSCRICAO | [09:20] Sofia |
-| FDD-DEP-02 | `docs/FDD.md` | Dependência | MySQL 8.0 do `docker-compose.yml`, com `SKIP LOCKED` e colunas `Json` | TRANSCRICAO | [09:07] Diego |
-| FDD-DEP-03 | `docs/FDD.md` | Dependência | Prisma 5.22.0: `$queryRaw` na transação, migração nova, `PrismaClient` próprio no worker com a mesma `DATABASE_URL` | TRANSCRICAO | [09:30] Bruno |
+| FDD-DEP-01 | `docs/FDD.md` | Dependência | Node >=20; hipótese: `fetch`, `AbortSignal.timeout` e `crypto` (`createHmac`, `randomBytes`, `timingSafeEqual`) nativos, sem dependência nova, a confirmar em teste | CODIGO | package.json |
+| FDD-DEP-02 | `docs/FDD.md` | Dependência | MySQL que o projeto já usa; `SKIP LOCKED` como hipótese a confirmar em teste | TRANSCRICAO | [09:07] Diego |
+| FDD-DEP-02b | `docs/FDD.md` | Dependência | MySQL 8.0, imagem `mysql:8.0` do `docker-compose.yml` | CODIGO | docker-compose.yml |
+| FDD-DEP-03 | `docs/FDD.md` | Dependência | Prisma 5.22.0: `$queryRaw` na transação (hipótese), migração nova, `PrismaClient` próprio no worker com a mesma `DATABASE_URL` | TRANSCRICAO | [09:30] Bruno |
 | FDD-DEP-03b | `docs/FDD.md` | Dependência | Prisma 5.22.0 e migração por `npm run db:migrate` (`prisma migrate dev`) | CODIGO | package.json |
 | FDD-DEP-04 | `docs/FDD.md` | Dependência | `uuid` 11.0.3, `zod` 3.23.8 e `pino` 9.5.0 já declarados | TRANSCRICAO | [09:25] Diego |
 | FDD-DEP-05 | `docs/FDD.md` | Dependência | Nenhuma dependência nova | TRANSCRICAO | [09:30] Larissa |
 | FDD-DEP-06 | `docs/FDD.md` | Dependência | Worker importa `src/config/env.ts` e exige as mesmas variáveis da API, inclusive `JWT_SECRET` | CODIGO | src/config/env.ts |
-| FDD-DEP-07 | `docs/FDD.md` | Dependência | Segundo pool de conexões: tamanho padrão do pool do Prisma 5.22.0 e `max_connections` padrão do MySQL 8.0 verificados; hipótese de soma abaixo do limite em produção | CODIGO | .env.example |
-| FDD-DEP-08 | `docs/FDD.md` | Dependência | Proposta: sem mudança nesta fase; exclusão de cliente com webhook falha por `Restrict` com `P2003` e responde 500 | CODIGO | src/modules/customers/customer.service.ts |
+| FDD-DEP-07 | `docs/FDD.md` | Dependência | Segundo pool de conexões; `DATABASE_URL` sem `connection_limit`; hipótese de soma abaixo do limite do MySQL de produção | CODIGO | .env.example |
+| FDD-DEP-08 | `docs/FDD.md` | Dependência | Proposta: sem mudança nesta fase; hipótese: exclusão de cliente com webhook falha pela FK `ON DELETE RESTRICT` e responde 500 | CODIGO | prisma/migrations/20260519182739_init/migration.sql |
 | FDD-DEP-09 | `docs/FDD.md` | Dependência | Proposta: parâmetros como constantes em `webhook.config.ts` (novo), sem variável de ambiente nova | CODIGO | src/config/env.ts |
 | FDD-DEP-10 | `docs/FDD.md` | Dependência | Compatibilidade: nenhuma rota existente muda; `PATCH /api/v1/orders/:id/status` ganha leitura e gravação na transação; proposta: exclusão de cliente com webhook passa a falhar | TRANSCRICAO | [09:40] Bruno |
 | FDD-INT-01 | `docs/FDD.md` | Integração | `order.service.ts`: `changeStatus` chama `publishWebhookEvent` depois do histórico e antes da releitura | TRANSCRICAO | [09:40] Bruno |
@@ -413,12 +416,11 @@ Resumo iniciado por "Proposta:", "Hipótese:" ou "Consequência derivada:" indic
 | FDD-RISCO-05 | `docs/FDD.md` | Risco | Vazamento da secret por log, banco ou cliente | TRANSCRICAO | [09:22] Diego |
 | FDD-RISCO-06 | `docs/FDD.md` | Risco | Crescimento sem retenção de outbox, histórico e DLQ; arquivamento sem prazo | TRANSCRICAO | [09:08] Diego |
 | FDD-RISCO-07 | `docs/FDD.md` | Risco | Cliente que não deduplica pelo `X-Event-Id` (parte técnica; risco de produto no PRD-RISCO-02) | TRANSCRICAO | [09:25] Diego |
-| FDD-RISCO-08 | `docs/FDD.md` | Risco | Perda de ordem por pedido no retry e no reprocessamento (RFC-QA-05) | TRANSCRICAO | [09:12] Diego |
+| FDD-RISCO-08 | `docs/FDD.md` | Risco | Perda de ordem por pedido no retry e no reprocessamento (RFC-QA-05) | TRANSCRICAO | [09:17] Larissa |
 | FDD-RISCO-09 | `docs/FDD.md` | Risco | Registro público que aceita ADMIN enfraquece `requireRole` no reprocessamento | CODIGO | src/modules/auth/auth.schemas.ts |
 | FDD-RISCO-10 | `docs/FDD.md` | Risco | Proposta: evento acima de 64 KB fora do at-least-once | TRANSCRICAO | [09:24] Larissa |
 | FDD-RISCO-11 | `docs/FDD.md` | Risco | Transação do `changeStatus` mais longa com leitura de webhooks e gravação na outbox | TRANSCRICAO | [09:40] Bruno |
-| FDD-RISCO-12 | `docs/FDD.md` | Risco | Proposta: exclusão de cliente com webhook responde 500 (`P2003`) | CODIGO | src/middlewares/error.middleware.ts |
-| FDD-RISCO-13 | `docs/FDD.md` | Risco | `fetch` marcado como experimental na documentação do Node 20 | CODIGO | package.json |
+| FDD-RISCO-12 | `docs/FDD.md` | Risco | Proposta: exclusão de cliente com webhook responde 500 (hipótese do FDD-DEP-08) | CODIGO | src/middlewares/error.middleware.ts |
 | FDD-PARAM-01 | `docs/FDD.md` | Parâmetro | Polling de 2 s (decidido); proposta: contado a partir do fim do ciclo | TRANSCRICAO | [09:10] Larissa |
 | FDD-PARAM-02 | `docs/FDD.md` | Parâmetro | 1 worker (decidido) | TRANSCRICAO | [09:12] Diego |
 | FDD-PARAM-03 | `docs/FDD.md` | Parâmetro | Proposta: 10 linhas por ciclo ("batch pequeno") | TRANSCRICAO | [09:08] Diego |

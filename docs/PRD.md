@@ -50,7 +50,7 @@ O que os clientes chamam de "tempo real" é uma notificação abaixo de 10 s; o 
 | --- | --- | --- | --- | --- |
 | PRD-OBJ-01 | Notificar a mudança de status do pedido no que os clientes chamam de tempo real | Tempo entre a mudança de status e a chegada da notificação | Abaixo de 10 s. A meta só é atendida quando o primeiro envio dá certo, com atraso de até 2 s causado pela leitura periódica ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)); se vale também para notificações que precisam de reenvio é pergunta de produto para Marcos ([RFC-QA-07](RFC.md#questões-em-aberto)) | `[09:02] Marcos`, `[09:10] Larissa` |
 | PRD-OBJ-02 | Deixar a feature disponível para os 3 clientes que pediram | Prazo da primeira entrega, revisão de segurança incluída | 3 sprints (`[09:47] Larissa`). A Atlas pediu o fim de novembro (`[09:45] Marcos`), e Marcos confirma o prazo com ela (`[09:47] Marcos`). A reunião não verificou se as 3 sprints cabem até essa data (lacuna, sem questão aberta no RFC) | `[09:47] Larissa`, `[09:45] Marcos`, `[09:47] Marcos` |
-| PRD-OBJ-03 | Não perder a notificação quando o cliente fica fora do ar | Janela de reenvio automático antes de exigir reprocessamento manual | Quase 15 h, aceita pelo produto (`[09:17] Diego`, `[09:17] Marcos`). **Proposta (a validar):** na leitura adotada pelo FDD (envio inicial mais 5 reenvios), a janela é de cerca de 14,6 h; se "5 tentativas" forem 5 envios no total, os reenvios cobrem cerca de 2,6 h (156 min) ([RFC-QA-08](RFC.md#questões-em-aberto)) | `[09:17] Diego`, `[09:17] Marcos`, `[09:17] Larissa` |
+| PRD-OBJ-03 | Não perder a notificação quando o cliente fica fora do ar | Janela de reenvio automático antes de exigir reprocessamento manual | Quase 15 h, aceita pelo produto (`[09:17] Diego`, `[09:17] Marcos`). **Hipótese:** "5 tentativas" são o envio inicial mais 5 reenvios, a leitura que usa os cinco intervalos e dá cerca de 14,6 h; confirmação na [RFC-QA-08](RFC.md#questões-em-aberto), outra contagem na questão 1 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md) | `[09:17] Diego`, `[09:17] Marcos`, `[09:17] Larissa` |
 | PRD-OBJ-04 | Dar ao cliente visibilidade das entregas | Envios mostrados no histórico de cada webhook | Os últimos 100 envios por webhook | `[09:34] Marcos` |
 | PRD-OBJ-05 | Permitir ao cliente confirmar que a notificação veio da plataforma e não foi alterada | Notificações com assinatura verificável pelo cliente | Toda notificação enviada | `[09:19] Sofia` |
 
@@ -208,7 +208,7 @@ A cada mudança de status de um pedido, a plataforma notifica o cliente (`[09:00
 
 - A notificação reflete o pedido no momento da mudança, mesmo que ele mude depois (`[09:52] Larissa`), e traz o identificador do webhook, para o cliente com vários webhooks saber qual cadastro a recebeu (`[09:44] Sofia`).
 - A mesma notificação pode chegar mais de uma vez, com o mesmo identificador em todos os reenvios automáticos (`[09:25] Diego`); o descarte das repetidas está no PRD-RNF-19.
-- Os clientes nunca pediram ordem global (`[09:14] Marcos`), e a ordem por pedido não é garantida (PRD-RNF-21).
+- Os clientes nunca pediram ordem global (`[09:14] Marcos`); a ordem por pedido vale com um único processo de envio, como decidido (`[09:13] Larissa`), e o reenvio e os demais casos do PRD-RNF-21 podem invertê-la.
 - **Proposta (a validar):** mudança de status feita direto no banco, como carga inicial ou correção manual, não gera notificação, e a regra fica documentada para quem opera o banco (questão 2 do [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)) (`[09:40] Bruno`).
 
 **Erros previstos**
@@ -252,7 +252,7 @@ Envio que falha é repetido automaticamente com intervalos crescentes de 1 min, 
 
 **Fluxos alternativos e exceções**
 
-- O teto foi fechado como "5 tentativas" (`[09:17] Larissa`), com a contagem em aberto. **Proposta (a validar):** na leitura adotada pelo FDD (envio inicial mais 5 reenvios), a janela é de cerca de 14,6 h; se "5 tentativas" forem 5 envios no total, os reenvios cobrem cerca de 2,6 h (156 min) ([RFC-QA-08](RFC.md#questões-em-aberto)).
+- O teto foi fechado como "5 tentativas" (`[09:17] Larissa`). **Hipótese:** são o envio inicial mais 5 reenvios, a leitura que usa os cinco intervalos e dá cerca de 14,6 h, a janela de quase 15 h dita na reunião (`[09:17] Diego`); confirmação na [RFC-QA-08](RFC.md#questões-em-aberto), outra contagem na questão 1 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md).
 - Cliente fora do ar por mais tempo que a janela depende de reprocessamento manual, limite aceito pelo produto (`[09:17] Marcos`).
 - **Proposta (a validar):** resposta fora da faixa de sucesso do HTTP e erro de rede também contam como falha (questão 2 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) (`[09:42] Diego`).
 
@@ -355,7 +355,7 @@ O cliente pede uma secret nova pela API (`[09:21] Sofia`), e a anterior continua
 ### Performance
 
 - **PRD-RNF-01**: notificação abaixo de 10 s depois da mudança de status (`[09:02] Marcos`). A meta só é atendida quando o primeiro envio dá certo ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)); se ela vale também para notificações que precisam de reenvio é pergunta de produto para Marcos ([RFC-QA-07](RFC.md#questões-em-aberto)).
-- **PRD-RNF-02**: a leitura periódica das notificações registradas causa um atraso de até 2 s no pior caso, aceito na reunião (`[09:10] Larissa`). **Proposta (a validar):** com ciclos de leitura que não se sobrepõem, esse atraso pode somar a duração do ciclo anterior (PRD-CA-03); lacuna, sem questão aberta no RFC.
+- **PRD-RNF-02**: a leitura periódica das notificações registradas causa um atraso de até 2 s no pior caso, aceito na reunião (`[09:10] Larissa`). **Proposta (a validar):** o desenho técnico pode somar um pequeno acréscimo a esses 2 s ([FDD-OBJ-02](FDD.md#2-objetivos-técnicos), [FDD-CA-04](FDD.md#12-critérios-de-aceite-técnicos)); lacuna, sem questão aberta no RFC.
 - **PRD-RNF-03**: o sistema do cliente tem 10 s para responder a cada envio; depois disso o envio conta como falha e vai para reenvio (`[09:42] Diego`). Esse limite de 10 s não é a meta de notificação do PRD-RNF-01.
 
 ### Disponibilidade
@@ -388,12 +388,12 @@ A reunião não fixou percentual de disponibilidade da plataforma, e este PRD n�
 - **PRD-RNF-18**: toda mudança de status de um pedido feita pela operação normal da API, que algum webhook do cliente quer receber, gera a notificação (`[09:40] Bruno`; [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)), e nenhuma notificação sai de uma mudança desfeita (`[09:06] Diego`). **Proposta (a validar):** as exceções são a notificação acima de 64 KB (PRD-RNF-22) e a mudança feita direto no banco, fora da operação normal da API, que não gera notificação; essa regra fica documentada para quem opera o banco (questão 2 do [ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)).
 - **PRD-RNF-19**: a entrega é feita pelo menos uma vez: a mesma notificação pode chegar mais de uma vez, e o cliente descarta as repetidas pelo identificador (`[09:25] Diego`), regra documentada com destaque no portal (`[09:26] Marcos`). O identificador é o mesmo em todos os webhooks que recebem a notificação, então o cliente com vários webhooks descarta pelo identificador junto com o webhook que recebeu ([ADR-005-CONS-07](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)). Se o reprocessamento mantém o identificador está em aberto ([RFC-QA-11](RFC.md#questões-em-aberto)).
 - **PRD-RNF-20**: a notificação reflete o pedido no momento da mudança, mesmo que ele mude depois (`[09:52] Larissa`).
-- **PRD-RNF-21**: os clientes nunca pediram ordem global (`[09:14] Marcos`); a ordem por pedido não é garantida: o reenvio, o reprocessamento e os demais casos do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md) podem inverter a ordem. **Proposta (a validar):** o cliente ordena pelo momento da mudança, que vem no conteúdo da notificação ([RFC-QA-05](RFC.md#questões-em-aberto)).
+- **PRD-RNF-21**: os clientes nunca pediram ordem global (`[09:14] Marcos`); com um único processo de envio, a ordem por pedido vale, como decidido (`[09:13] Larissa`), mas o reenvio, o reprocessamento e os demais casos do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md) podem invertê-la. **Proposta (a validar):** o cliente ordena pelo momento da mudança, que vem no conteúdo da notificação ([RFC-QA-05](RFC.md#questões-em-aberto)).
 - **PRD-RNF-22**: cada notificação tem limite de 64 KB, com erro acima disso (`[09:24] Larissa`). **Proposta (a validar):** a mudança de status do pedido não é desfeita; a notificação não é enviada e fica entre as entregas esgotadas com o motivo, sem reenvio automático, e o reprocessamento dela é recusado (questão 2 do [ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md), [RFC-RISCO-06](RFC.md#riscos)).
 
 ### Compatibilidade
 
-- **PRD-RNF-23**: a feature só altera o comportamento existente dentro da mudança de status do pedido (`[09:40] Bruno`), que mantém o contrato atual, e os clientes que continuarem consultando a lista de pedidos não são afetados ([FDD-DEP-10](FDD.md#10-dependências-e-compatibilidade)). **Proposta (a validar):** sem mudança na exclusão de cliente nesta fase, a exclusão de cliente que tem ou já teve webhook passa a ser recusada com erro genérico, como já acontece com cliente que tem pedido ([FDD-RISCO-12](FDD.md#13-riscos-e-mitigação)); lacuna, sem questão aberta no RFC.
+- **PRD-RNF-23**: a feature só altera o comportamento existente dentro da mudança de status do pedido (`[09:40] Bruno`), que mantém o contrato atual, e os clientes que continuarem consultando a lista de pedidos não são afetados ([FDD-DEP-10](FDD.md#10-dependências-e-compatibilidade)). **Proposta (a validar):** sem mudança na exclusão de cliente nesta fase, a exclusão de cliente que tem ou já teve webhook passa a ser recusada com erro genérico, como a hipótese do FDD prevê também para cliente que tem pedido ([FDD-RISCO-12](FDD.md#13-riscos-e-mitigação)); lacuna, sem questão aberta no RFC.
 
 ## Decisões e trade-offs
 
@@ -407,7 +407,7 @@ As decisões de arquitetura estão nos ADRs e no [RFC](RFC.md); aqui fica só o 
 ### PRD-DEC-02: Envio em processo separado com leitura a cada 2 s
 
 - **Justificativa:** um worker separado da API lê a outbox por polling a cada 2 s, o que atende a meta no caminho feliz e sobrevive ao reinício da API (`[09:10] Larissa`; [ADR-002](adrs/ADR-002-worker-separado-com-polling.md)).
-- **Trade-off:** atraso de até 2 s e ordem por pedido não garantida, no reenvio e nos demais casos do ADR ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md), [RFC-QA-05](RFC.md#questões-em-aberto)).
+- **Trade-off:** atraso de até 2 s e ordem por pedido que vale com um único processo de envio, mas pode se inverter no reenvio e nos demais casos do ADR ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md), [RFC-QA-05](RFC.md#questões-em-aberto)).
 
 ### PRD-DEC-03: Reenvio com intervalos crescentes e entregas esgotadas guardadas à parte
 
@@ -512,7 +512,7 @@ Já houve cliente que vazou a secret em log da própria aplicação (`[09:22] Di
 
 ### PRD-RISCO-04: Cliente fora do ar por mais tempo que a janela de reenvio
 
-Um cliente fora do ar por mais de quase 15 h esgota o reenvio automático, e as notificações passam a depender de reprocessamento manual; o produto aceitou esse limite (`[09:17] Marcos`). **Proposta (a validar):** se "5 tentativas" forem 5 envios no total, a janela cai para cerca de 2,6 h (156 min), valor que o produto não aceitou ([RFC-QA-08](RFC.md#questões-em-aberto)).
+Um cliente fora do ar por mais de quase 15 h esgota o reenvio automático, e as notificações passam a depender de reprocessamento manual; o produto aceitou esse limite (`[09:17] Marcos`). **Hipótese:** a janela de quase 15 h vale com "5 tentativas" lidas como envio inicial mais 5 reenvios; a outra contagem, que encurta a janela, está na questão 1 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md) ([RFC-QA-08](RFC.md#questões-em-aberto)).
 
 **Probabilidade**: baixa.
 
@@ -527,7 +527,7 @@ Um cliente fora do ar por mais de quase 15 h esgota o reenvio automático, e as 
 
 ### PRD-RISCO-05: Notificações de um pedido chegando fora de ordem
 
-Os clientes nunca pediram ordem global (`[09:14] Marcos`). Com o reenvio em intervalos crescentes (`[09:17] Larissa`), uma notificação mais nova do mesmo pedido pode chegar antes da que espera reenvio, e o mesmo acontece no reprocessamento ([ADR-002-CONS-07](adrs/ADR-002-worker-separado-com-polling.md), [FDD-RISCO-08](FDD.md#13-riscos-e-mitigação), [RFC-QA-05](RFC.md#questões-em-aberto)).
+Os clientes nunca pediram ordem global (`[09:14] Marcos`), e a ordem por pedido vale com um único processo de envio (`[09:13] Larissa`). Mesmo assim, com o reenvio em intervalos crescentes (`[09:17] Larissa`), uma notificação mais nova do mesmo pedido pode chegar antes da que espera reenvio, e o mesmo acontece no reprocessamento e nos demais casos do [ADR-002](adrs/ADR-002-worker-separado-com-polling.md) ([ADR-002-CONS-07](adrs/ADR-002-worker-separado-com-polling.md), [FDD-RISCO-08](FDD.md#13-riscos-e-mitigação), [RFC-QA-05](RFC.md#questões-em-aberto)).
 
 **Probabilidade**: média, sempre que um envio falha.
 
@@ -561,11 +561,11 @@ Checklist objetivo que define se a feature está pronta. O detalhe técnico de c
 
 - **PRD-CA-01**: toda mudança de status feita pela operação normal da API que um webhook do cliente escolheu gera notificação (`[09:40] Bruno`), e a mudança desfeita não gera nenhuma (`[09:06] Diego`) ([FDD-CA-01](FDD.md#12-critérios-de-aceite-técnicos), [FDD-CA-02](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-02**: webhook que não escolheu o novo status não recebe notificação (`[09:33] Bruno`) ([FDD-CA-03](FDD.md#12-critérios-de-aceite-técnicos)).
-- **PRD-CA-03**: no caminho feliz, o primeiro envio sai em até 2 s depois da mudança, mais o tempo do envio (`[09:10] Larissa`); **Proposta (a validar):** mais a duração do ciclo de leitura anterior, porque os ciclos não se sobrepõem (lacuna, sem questão aberta no RFC); o critério não promete a meta de 10 s para notificação que precisa de reenvio ([RFC-QA-07](RFC.md#questões-em-aberto)) ([FDD-CA-04](FDD.md#12-critérios-de-aceite-técnicos)).
+- **PRD-CA-03**: no caminho feliz, o primeiro envio sai em até 2 s depois da mudança, mais o tempo do envio (`[09:10] Larissa`); **Proposta (a validar):** mais o pequeno acréscimo do desenho técnico (PRD-RNF-02; lacuna, sem questão aberta no RFC); o critério não promete a meta de 10 s para notificação que precisa de reenvio ([RFC-QA-07](RFC.md#questões-em-aberto)) ([FDD-CA-04](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-04**: cadastro com URL sem https é recusado (`[09:23] Sofia`) ([FDD-CA-11](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-05**: **Proposta (a validar):** lista de status vazia, com repetição ou com status inexistente é recusada (`[09:33] Marcos`); lacuna, sem questão aberta no RFC ([FDD-CA-12](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-06**: sistema do cliente que não responde em 10 s gera envio com falha e recebe reenvio (`[09:42] Diego`) ([FDD-CA-05](FDD.md#12-critérios-de-aceite-técnicos)).
-- **PRD-CA-07**: os reenvios seguem a progressão de intervalos de 1 min, 5 min, 30 min, 2 h e 12 h (`[09:17] Larissa`), e, esgotados os envios, a notificação fica entre as entregas esgotadas (`[09:18] Diego`). **Proposta (a validar):** o teto é o envio inicial mais 5 reenvios, que usa os cinco intervalos; com 5 envios no total, o de 12 h não é usado ([RFC-QA-08](RFC.md#questões-em-aberto)) ([FDD-CA-06](FDD.md#12-critérios-de-aceite-técnicos), [FDD-CA-07](FDD.md#12-critérios-de-aceite-técnicos)).
+- **PRD-CA-07**: os reenvios seguem a progressão de intervalos de 1 min, 5 min, 30 min, 2 h e 12 h (`[09:17] Larissa`), e, esgotados os envios, a notificação fica entre as entregas esgotadas (`[09:18] Diego`). **Hipótese:** o teto é o envio inicial mais 5 reenvios, que usa os cinco intervalos ([RFC-QA-08](RFC.md#questões-em-aberto); outra contagem na questão 1 do [ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)) ([FDD-CA-06](FDD.md#12-critérios-de-aceite-técnicos), [FDD-CA-07](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-08**: o cliente verifica a assinatura com a secret do webhook (`[09:22] Sofia`). **Proposta (a validar):** nas 24 h depois de uma rotação, a verificação aceita a secret nova e a anterior ([RFC-QA-09](RFC.md#questões-em-aberto)) ([FDD-CA-08](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-09**: o identificador da notificação é o mesmo em todos os reenvios automáticos dela (`[09:25] Diego`); no reprocessamento, ver o PRD-CA-11 ([FDD-CA-09](FDD.md#12-critérios-de-aceite-técnicos)).
 - **PRD-CA-10**: o reprocessamento é aceito só para administrador e registra o usuário que o fez (`[09:36] Larissa`, `[09:36] Sofia`) ([FDD-CA-13](FDD.md#12-critérios-de-aceite-técnicos)).

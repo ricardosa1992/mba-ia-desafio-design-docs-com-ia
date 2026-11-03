@@ -58,7 +58,7 @@ flowchart LR
 
 1. **RFC-PROP-01**: o `changeStatus` grava o evento na outbox na transação da mudança de status; falha na gravação desfaz tudo ([ADR-001](adrs/ADR-001-outbox-transacional-no-mysql.md)).
 2. **RFC-PROP-02**: só grava se algum webhook do cliente quer aquele status do pedido, e guarda o payload montado (snapshot), sem os itens ([ADR-007](adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)).
-3. **RFC-PROP-03**: a cada 2 s, o worker busca as linhas pendentes mais antigas; worker único é premissa, não garantia, e a ordem por pedido não é garantida (RFC-QA-05, RFC-QA-06) ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)).
+3. **RFC-PROP-03**: a cada 2 s, o worker busca as linhas pendentes mais antigas; worker único (premissa, não garantia) dá ordem por pedido, salvo reentrega e envio concorrente (RFC-QA-05, RFC-QA-06) ([ADR-002](adrs/ADR-002-worker-separado-com-polling.md)).
 4. **RFC-PROP-04**: o envio leva o HMAC-SHA256 do corpo em `X-Signature`, com secret por endpoint rotacionável com 24 h de convivência (forma em aberto: RFC-QA-09, RFC-QA-10; [ADR-004](adrs/ADR-004-assinatura-hmac-sha256-por-endpoint.md)), e o UUID do evento, gerado na inserção, em `X-Event-Id` ([ADR-005](adrs/ADR-005-entrega-at-least-once-com-x-event-id.md)).
 5. **RFC-PROP-05**: envio que falha, inclusive por timeout HTTP de 10 s, é repetido com backoff de 1 min, 5 min, 30 min, 2 h e 12 h, até "5 tentativas", contagem em aberto (RFC-QA-08) ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)).
 6. **RFC-PROP-06**: esgotados os envios, o evento vai para a DLQ (`webhook_dead_letter`), e um ADMIN pode devolvê-lo à outbox como pendente, com registro de quem o fez ([ADR-003](adrs/ADR-003-retry-com-backoff-e-dlq.md)).

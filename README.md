@@ -14,7 +14,7 @@ A dificuldade real não era escrever, era **não inventar**. A reunião descarta
 | --- | --- |
 | **Claude Code** (CLI), modelo **Claude Opus 5.5** | Orquestrador de todas as missões: leu o código e a transcrição, escreveu e versionou os prompts, aplicou as correções, escreveu os scripts locais de apoio (validador, sincronização do tracker, sorteio da auditoria, checagem de diagramas) e preparou cada commit para a minha validação. |
 | **Subagentes do Claude Code em contexto limpo** | Três usos, sempre sem o histórico da conversa: (1) **gerador**, que recebia só o prompt versionado e as entradas dele e escrevia o documento; (2) **revisor crítico adversarial**, que procurava erro com prova (falante trocado, descarte virando requisito, proposta sem rótulo, altura errada) e devolvia também "Notas sobre o prompt"; (3) **auditor** do tracker, que conferiu linhas sorteadas contra a transcrição. Separar quem escreve de quem revisa achou boa parte dos erros que passavam no validador. |
-| **Busca e leitura de documentação na web** (ferramentas do Claude Code) | Primeiro, para levantar formatos de referência (MADR 4.0, templates de RFC). Depois, para **verificar hipóteses** em vez de deixá-las no texto: pool de conexões e transações interativas do Prisma 5.22.0, módulo `crypto` e `fetch` do Node 20, leituras com bloqueio (`SKIP LOCKED`) do MySQL 8.0. |
+| **Busca e leitura de documentação na web** (ferramentas do Claude Code) | Primeiro, para levantar formatos de referência (MADR 4.0, templates de RFC). Depois, para checar hipóteses técnicas: pool de conexões e transações interativas do Prisma 5.22.0, módulo `crypto` e `fetch` do Node 20, leituras com bloqueio (`SKIP LOCKED`) do MySQL 8.0. Como o enunciado só aceita a transcrição e o código como origem, o que só essa documentação sustenta aparece como **Hipótese**, com o teste ou a consulta que a confirma no repositório (ajuste da M13). |
 | **Prompts do curso** (PRD e FDD) | Ponto de partida dos prompts de PRD e FDD. O de PRD foi convertido de modo entrevista para modo evidência e perdeu os valores padrão sem origem; o de FDD teve o esqueleto reconstruído. O material do curso não é redistribuído neste repositório. |
 
 Ferramentas de apoio escritas com a IA e executadas sem ela: um validador em Node com 9 grupos de checagem (estrutura, evidências, ADR, RFC, FDD, PRD, tracker, README, consistência) e o parse dos diagramas mermaid com `mermaid` 11.4.1 e `jsdom`. Esses scripts, os prompts e o plano ficam só na minha máquina (ver [Workflow adotado](#workflow-adotado)).
@@ -23,11 +23,11 @@ Ferramentas de apoio escritas com a IA e executadas sem ela: um validador em Nod
 
 ### Como organizei o trabalho
 
-Dividi o trabalho em 13 missões (M00 a M12), descritas num plano local. Cada missão rodou numa **janela de contexto nova**, começando pela leitura do plano e das **Notas de passagem** deixadas pela missão anterior (o que foi entregue, o que ficou em conflito, o que a próxima precisa saber). Da M04 em diante, toda missão terminava do mesmo jeito: validador automático, apresentação do que foi gerado, **minha validação** e só então um commit `docs(mNN): ...` com os entregáveis. Plano, prompts, catálogos, scripts e o log de iterações ficaram fora do versionamento; por isso os prompts aparecem abaixo copiados em blocos de código.
+Dividi o trabalho em 14 missões (M00 a M13), descritas num plano local. Cada missão rodou numa **janela de contexto nova**, começando pela leitura do plano e das **Notas de passagem** deixadas pela missão anterior (o que foi entregue, o que ficou em conflito, o que a próxima precisa saber). Da M04 em diante, toda missão terminava do mesmo jeito: validador automático, apresentação do que foi gerado, **minha validação** e só então um commit `docs(mNN): ...` com os entregáveis. Plano, prompts, catálogos, scripts e o log de iterações ficaram fora do versionamento; por isso os prompts aparecem abaixo copiados em blocos de código.
 
 ### Ordem de produção
 
-Primeiro a base (M00 a M03): plano e validador, catálogo da transcrição, mapa do código, regras comuns e prompt do revisor. Depois os documentos na ordem sugerida pelo enunciado: ADRs (M04), RFC (M05), FDD em duas partes (M06 e M07) e PRD (M08), que virou consolidação em linguagem de produto. O tracker foi construído junto: cada missão de documento entregava as linhas dele. Por fim, auditoria do tracker (M09), revisão cruzada do pacote (M10), este README (M11) e checklist final (M12).
+Primeiro a base (M00 a M03): plano e validador, catálogo da transcrição, mapa do código, regras comuns e prompt do revisor. Depois os documentos na ordem sugerida pelo enunciado: ADRs (M04), RFC (M05), FDD em duas partes (M06 e M07) e PRD (M08), que virou consolidação em linguagem de produto. O tracker foi construído junto: cada missão de documento entregava as linhas dele. Por fim, auditoria do tracker (M09), revisão cruzada do pacote (M10), este README (M11), checklist final (M12) e ajustes depois de uma auditoria do pacote contra o enunciado (M13).
 
 ### Como organizei a interação com a IA
 
@@ -204,7 +204,7 @@ Pedir ao revisor uma seção extra de "Notas sobre o prompt" foi o que transform
 
 ## Iterações e ajustes
 
-Foram **25 iterações principais** registradas (cada uma é uma correção relevante sobre saída da IA, com o que ela errou, como o erro foi detectado e como foi corrigido) e **32 versões novas de prompt** além das 9 iniciais. Nenhum documento passou de primeira: todos tiveram pelo menos um ciclo de geração, revisão e correção, e o pacote inteiro teve um ciclo a mais na revisão cruzada. Os casos mais instrutivos, com antes e depois:
+Foram **30 iterações principais** registradas (cada uma é uma correção relevante sobre saída da IA, com o que ela errou, como o erro foi detectado e como foi corrigido) e **40 versões novas de prompt** além das 9 iniciais. Nenhum documento passou de primeira: todos tiveram pelo menos um ciclo de geração, revisão e correção, e o pacote inteiro teve mais dois ciclos: a revisão cruzada e a auditoria contra o enunciado. Os casos mais instrutivos, com antes e depois:
 
 ### Catálogo da transcrição: o descarte que citava a pergunta (M01)
 
@@ -214,7 +214,7 @@ Foram **25 iterações principais** registradas (cada uma é uma correção rele
 ### ADRs aprovados pela máquina e reprovados na leitura (M04)
 
 - **Antes**: a primeira saída tinha erros que dois revisores e a minha leitura acharam (em 6 ADRs, quem originou parte da decisão aparecia só como consultado; o "nada novo" dito sobre o logger virou regra da feature inteira; um lote de 10 eventos sem origem, que eu achei, apareceu como proposta). Corrigidos esses, os ADRs passavam no validador e no revisor. Na minha leitura ainda estavam ruins: corpo cheio de timestamps e de narrativa da reunião, Decisão com nome de arquivo e caminho de endpoint, alternativas impossíveis, e promessas que o desenho não cumpre: ordem de entrega por pedido mesmo com retry, "5 tentativas" com uma janela de quase 15 h que depende de uma contagem que a reunião não fechou, propostas escolhendo a solução de lacunas.
-- **Depois**: escrevi os critérios de duas passadas de revisão; os da primeira foram aplicados ao ADR-002 e, depois de validados, aos outros seis. Corpo sem timestamps e origem nas Referências por ID; Decisão só arquitetural, com o detalhe levado para notas do FDD; contradição previsível vira consequência **Derivada** com o cenário e uma questão em aberto com opções viáveis; hipóteses verificadas na documentação oficial do Prisma, do Node 20 e do MySQL 8.0. Os 7 ADRs terminaram com 30 questões em aberto (31 depois da revisão cruzada) e a nota "Aceito quanto a ..." no Status quando a questão afeta o núcleo da decisão. O padrão virou a v3 e depois a v4 do prompt de ADR, com checagens novas no validador.
+- **Depois**: escrevi os critérios de duas passadas de revisão; os da primeira foram aplicados ao ADR-002 e, depois de validados, aos outros seis. Corpo sem timestamps e origem nas Referências por ID; Decisão só arquitetural, com o detalhe levado para notas do FDD; contradição previsível vira consequência **Derivada** com o cenário e uma questão em aberto com opções viáveis; hipóteses verificadas na documentação oficial do Prisma, do Node 20 e do MySQL 8.0 (na M13, o que só essa documentação sustentava voltou a ser hipótese, com teste de confirmação). Os 7 ADRs terminaram com 30 questões em aberto (31 depois da revisão cruzada) e a nota "Aceito quanto a ..." no Status quando a questão afeta o núcleo da decisão. O padrão virou a v3 e depois a v4 do prompt de ADR, com checagens novas no validador.
 
 ### PRD reprovado por citar a armadilha (M08)
 
@@ -230,6 +230,11 @@ Foram **25 iterações principais** registradas (cada uma é uma correção rele
 
 - **Antes**: cada documento já tinha sido aprovado isoladamente pelo revisor. Uma tabela de consistência com 21 fatos-chave e dois revisores em modo pacote acharam 14 divergências e 30 achados Média ou Baixa, nenhum número diferente entre documentos: o problema era rótulo de proposta perdido ao atravessar documentos (o tracker afirmava como fato caminhos de rota que o FDD trata como proposta), garantias mais largas que a do ADR dono (o PRD listava de forma fechada os casos sem ordem de entrega) e propostas do FDD que encurtavam garantias de ADR sem voltar a ele (rotação repetida da secret dentro das 24 h).
 - **Depois**: edição pontual no PRD, no RFC, no FDD, no tracker e nos ADR-002 a ADR-007 (inclusive uma questão nova no ADR-004) e versão nova de 6 prompts. Parte dos achados tinha sido **induzida pelos próprios prompts**: o de PRD mandava citar a fala errada para o recorte por webhook e listar só dois casos sem ordem; o de FDD mandava contar como envio uma tentativa sem chamada HTTP.
+
+### Pacote verde e ainda arriscado diante do enunciado (M13)
+
+- **Antes**: com o validador verde e a checklist do enunciado marcada, uma auditoria contra o enunciado original achou pontos que quem avalia podia ler como contradição ou excesso: "a ordem por pedido não é garantida" em cinco trechos dos documentos e três linhas do tracker, quando a reunião decidiu ordem por pedido com worker único (`[09:13] Larissa`); o cenário da outra contagem (5 envios no total), com os números dela, repetido em 12 lugares, dando peso a uma dúvida que os cinco intervalos e as "quase 15 horas" já quase resolviam; fatos tirados de documentação externa (tamanho padrão do pool do Prisma, limite padrão de conexões do MySQL, código de erro interno do Prisma, `fetch` marcado como experimental), que o tracker apontava para falas ou arquivos que não os contêm; e detalhe de implementação no PRD. Parte disso vinha das regras dos próprios prompts: verificar hipótese na documentação oficial e escrever como fato; não afirmar a ordem por pedido em nenhum caso.
+- **Depois**: edição pontual, ADR dono primeiro: a garantia decidida vem antes das exceções; a leitura envio inicial mais 5 retentativas virou **Hipótese** no ADR-003, e a outra contagem ficou só na questão 1 dele; fato externo saiu ou virou hipótese com teste de confirmação (um risco do FDD saiu); o exemplo de nome `0001-...` do `docs/adrs/README.md` do repositório base deu lugar ao padrão `ADR-NNN`; o PRD passou a linkar o FDD no detalhe dos ciclos de leitura. Versão nova das regras comuns (três regras), dos prompts de ADR, FDD e PRD e do revisor. Lição: passar no validador e no revisor não garante a leitura que quem avalia vai fazer; vale uma última leitura contra o enunciado, procurando o que pode parecer contradição.
 
 ### Todas as iterações
 
@@ -260,6 +265,11 @@ Foram **25 iterações principais** registradas (cada uma é uma correção rele
 | 23 | M10 | 14 divergências e 30 achados no pacote | Edição pontual no PRD, RFC, FDD, tracker e ADR-002 a ADR-007 |
 | 24 | M10 | Achados induzidos pelos próprios prompts | Versão nova de 6 prompts |
 | 25 | M11 | Rascunho deste README com contagens erradas, atribuições trocadas (quem achou cada erro, qual versão de prompt o corrigiu) e generalizações sobre o processo, reprovado por um revisor em subagente limpo; seção Workflow com mais detalhe do que o enunciado pede, apontada por mim | Edição pontual e Workflow enxugado; texto das v1 dos prompts recuperado do histórico das sessões |
+| 26 | M13 | "A ordem por pedido não é garantida" sem a ressalva da ordem com worker único decidida na reunião; o prompt de PRD proibia afirmar a ordem | Garantia antes das exceções; regras comuns v5, prompts de ADR, FDD e PRD e revisor em versão nova |
+| 27 | M13 | Cenário da outra contagem (5 envios no total) repetido em 12 lugares | Leitura envio inicial mais 5 retentativas como hipótese no ADR-003; a outra contagem só na questão dele |
+| 28 | M13 | Fatos de documentação externa escritos como fato, com origem no tracker que não os contém; a regra do prompt mandava verificar na documentação oficial e citar | Removidos ou reescritos como hipótese com teste; um risco removido; regra reescrita nas regras comuns e nos prompts |
+| 29 | M13 | Manteve o exemplo de nome `0001-...` do README dos ADRs, contrário ao padrão usado, e levou ao PRD o detalhe dos ciclos de leitura | Exemplo trocado pelo padrão `ADR-NNN`; PRD com link para o FDD |
+| 30 | M13 | Mudança de rótulo (fato para hipótese) feita no item dono e não nas repetições; listas curtas de exceção da ordem; duas regras do prompt de PRD em contradição; achados de um revisor em subagente limpo sobre o diff da M13, sem achado Alta | Edição pontual no PRD, FDD, ADR-002 e tracker (3 linhas de segunda fonte); regras comuns, prompts de FDD e PRD em versão nova |
 
 ## Como navegar a entrega
 
@@ -273,7 +283,7 @@ Foram **25 iterações principais** registradas (cada uma é uma correção rele
     ├── FDD.md                especificação de implementação
     ├── TRACKER.md            origem de cada item
     └── adrs/
-        ├── README.md         do repositório base (não alterado)
+        ├── README.md         do repositório base, só com o padrão de nome dos ADRs ajustado
         ├── ADR-001-outbox-transacional-no-mysql.md
         ├── ADR-002-worker-separado-com-polling.md
         ├── ADR-003-retry-com-backoff-e-dlq.md
@@ -296,7 +306,7 @@ Ordem sugerida de leitura:
    - [ADR-006: Reuso dos padrões do projeto no módulo de webhooks](docs/adrs/ADR-006-reuso-dos-padroes-do-projeto.md)
    - [ADR-007: Payload em snapshot e filtro por status na inserção da outbox](docs/adrs/ADR-007-payload-snapshot-e-filtro-na-insercao.md)
 4. **[FDD](docs/FDD.md)**: modelo de dados, fluxos (outbox, worker, retry, DLQ, rotação de secret), 7 contratos HTTP completos, matriz de erros `WEBHOOK_*`, resiliência, observabilidade, a seção "Integração com o sistema existente" com 21 itens de integração ligados a caminhos reais do código, critérios de aceite técnicos e parâmetros.
-5. **[Tracker](docs/TRACKER.md)**: 426 linhas, uma por item dos documentos (cobertura de 100%), 87,3% com origem numa fala `[hh:mm] Nome` e 54 com origem num arquivo do código.
+5. **[Tracker](docs/TRACKER.md)**: 428 linhas, uma por item dos documentos mais as de segunda fonte (cobertura de 100%), 87,1% com origem numa fala `[hh:mm] Nome` e 55 com origem num arquivo do código.
 
 Para ler os documentos:
 
